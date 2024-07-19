@@ -2,6 +2,8 @@
 using CommunityToolkit.Mvvm.Input;
 using Config.Model;
 using System.IO.Ports;
+using TopPortLib;
+using TopPortLib.Interfaces;
 
 namespace CommunicationTool.ViewModel
 {
@@ -9,6 +11,8 @@ namespace CommunicationTool.ViewModel
     {
         [ObservableProperty]
         private bool _isPopupVisible;
+        [ObservableProperty]
+        private bool _hasPopupVisible;
         [ObservableProperty]
         private string[]? _portNames;
         [ObservableProperty]
@@ -22,9 +26,14 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private string? _status = "未连接";
         [ObservableProperty]
+        private bool _isConnect;
+        [ObservableProperty]
+        private bool _isOpen;
+        [ObservableProperty]
         SerialPortConnection _connection;
 
         private readonly Connection _config;
+        private ITopPort? _SerialPort;
         public SerialPortViewModel(Connection config, SerialPortConnection connection)
         {
             PortNames = SerialPort.GetPortNames();
@@ -32,12 +41,27 @@ namespace CommunicationTool.ViewModel
             Parity = Enum.GetValues(typeof(Parity)).Cast<Parity>();
             _config = config;
             Connection = connection;
+            Connection.PropertyChanged += Connection_PropertyChanged;
+            Status = Connection.ToString();
+        }
+
+        private async void Connection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            await _config.TrySaveChangeAsync();
+            Status = Connection.ToString();
         }
 
         [RelayCommand]
         private async Task SetSerialPortConfigAsync()
         {
-            IsPopupVisible = true;
+            if (!IsConnect) IsPopupVisible = true;
+            await Task.CompletedTask;
+        }
+
+        [RelayCommand]
+        private async Task HasPopupAsync()
+        {
+            HasPopupVisible = !HasPopupVisible;
             await Task.CompletedTask;
         }
 
@@ -46,6 +70,78 @@ namespace CommunicationTool.ViewModel
         {
             _config.SerialPortConnections.Remove(Connection);
             await _config.TrySaveChangeAsync();
+        }
+
+        [RelayCommand(CanExecute = nameof(CanOpen))]
+        private async Task ConnectAsync()
+        {
+            if (IsConnect)
+            {
+                await _SerialPort!.CloseAsync();
+                IsOpen = false;
+            }
+            else
+            {
+                var serialPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
+                {
+                    DtrEnable = Connection.DTR,
+                    RtsEnable = Connection.RTS
+                };
+                _SerialPort = new TopPort(serialPort, new Parser.Parsers.TimeParser());
+
+                _SerialPort.OnSentData += _SerialPort_OnSentData;
+                _SerialPort.OnReceiveParsedData += _SerialPort_OnReceiveParsedData;
+                _SerialPort.OnConnect += _SerialPort_OnConnect;
+                _SerialPort.OnDisconnect += _SerialPort_OnDisconnect;
+                try
+                {
+                    await _SerialPort.OpenAsync();
+                    IsOpen = true;
+                }
+                catch
+                {
+                    //ExceptionStr = "连接失败，检查链路";
+                }
+            }
+        }
+
+        private bool CanOpen()
+        {
+            if (IsOpen && !IsConnect)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private async Task _SerialPort_OnDisconnect()
+        {
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                IsConnect = false;
+                ConnectCommand.NotifyCanExecuteChanged();
+                //Exception = "通讯断连,等待连接...";
+            });
+        }
+
+        private async Task _SerialPort_OnConnect()
+        {
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                IsConnect = true;
+                ConnectCommand.NotifyCanExecuteChanged();
+                //Exception = "";
+            });
+        }
+
+        private Task _SerialPort_OnReceiveParsedData(byte[] data)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task _SerialPort_OnSentData(byte[] data)
+        {
+            throw new NotImplementedException();
         }
     }
 }

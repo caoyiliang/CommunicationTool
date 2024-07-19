@@ -54,6 +54,7 @@ namespace CommunicationTool.Behaviors
         {
             if (_isUserClosing)
             {
+                _isUserClosing = false;
                 var result = MessageBox.Show("你确定要结束该测试？", "确认关闭", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.No)
