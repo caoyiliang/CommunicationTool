@@ -30,17 +30,20 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private bool _isOpen;
         [ObservableProperty]
-        SerialPortConnection _connection;
+        private SerialPortConnection _connection;
+        [ObservableProperty]
+        private ParserConfig _parserConfig;
 
         private readonly Connection _config;
         private ITopPort? _SerialPort;
         public SerialPortViewModel(Connection config, SerialPortConnection connection)
         {
             PortNames = SerialPort.GetPortNames();
-            StopBits = Enum.GetValues(typeof(StopBits)).Cast<StopBits>();
-            Parity = Enum.GetValues(typeof(Parity)).Cast<Parity>();
+            StopBits = Enum.GetValues<StopBits>();
+            Parity = Enum.GetValues<Parity>();
             _config = config;
             Connection = connection;
+            ParserConfig = connection.ParserConfig;
             Connection.PropertyChanged += Connection_PropertyChanged;
             Status = Connection.ToString();
         }
@@ -89,10 +92,10 @@ namespace CommunicationTool.ViewModel
                 };
                 _SerialPort = new TopPort(serialPort, new Parser.Parsers.TimeParser());
 
-                _SerialPort.OnSentData += _SerialPort_OnSentData;
-                _SerialPort.OnReceiveParsedData += _SerialPort_OnReceiveParsedData;
-                _SerialPort.OnConnect += _SerialPort_OnConnect;
-                _SerialPort.OnDisconnect += _SerialPort_OnDisconnect;
+                _SerialPort.OnSentData += SerialPort_OnSentData;
+                _SerialPort.OnReceiveParsedData += SerialPort_OnReceiveParsedData;
+                _SerialPort.OnConnect += SerialPort_OnConnect;
+                _SerialPort.OnDisconnect += SerialPort_OnDisconnect;
                 try
                 {
                     await _SerialPort.OpenAsync();
@@ -114,7 +117,7 @@ namespace CommunicationTool.ViewModel
             return true;
         }
 
-        private async Task _SerialPort_OnDisconnect()
+        private async Task SerialPort_OnDisconnect()
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
@@ -124,7 +127,7 @@ namespace CommunicationTool.ViewModel
             });
         }
 
-        private async Task _SerialPort_OnConnect()
+        private async Task SerialPort_OnConnect()
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
@@ -134,12 +137,12 @@ namespace CommunicationTool.ViewModel
             });
         }
 
-        private Task _SerialPort_OnReceiveParsedData(byte[] data)
+        private Task SerialPort_OnReceiveParsedData(byte[] data)
         {
             throw new NotImplementedException();
         }
 
-        private Task _SerialPort_OnSentData(byte[] data)
+        private Task SerialPort_OnSentData(byte[] data)
         {
             throw new NotImplementedException();
         }

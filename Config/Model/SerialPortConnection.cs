@@ -21,6 +21,8 @@ namespace Config.Model
         private bool _DTR = false;
         [ObservableProperty]
         private bool _RTS = false;
+        [ObservableProperty]
+        private ParserConfig _ParserConfig = new();
 
         public override string ToString()
         {

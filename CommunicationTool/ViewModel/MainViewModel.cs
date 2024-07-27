@@ -15,7 +15,7 @@ namespace CommunicationTool.ViewModel
 
         public MainViewModel(ConfigManager configManager)
         {
-            TestTypes = Enum.GetValues(typeof(TestType)).Cast<TestType>();
+            TestTypes = Enum.GetValues<TestType>();
             Connection = configManager.Connection;
         }
     }

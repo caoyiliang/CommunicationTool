@@ -1,5 +1,8 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                    xmlns:i="clr-namespace:CommunicationTool.Behaviors"
+                    xmlns:view="clr-namespace:CommunicationTool.View">
     <Style x:Key="Window" TargetType="Window">
         <!--<Setter Property="AllowsTransparency" Value="True"/>
         <Setter Property="WindowStyle" Value="None"/>-->
@@ -63,6 +66,18 @@
                             <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock Text="{TemplateBinding Title}" Margin="10" FontSize="12" VerticalAlignment="Center" />
+                        <Button x:Name="btn" Content="分包规则" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,180,0" WindowChrome.IsHitTestVisibleInChrome="True">
+                            <b:Interaction.Behaviors>
+                                <i:OpenPopupBehavior Show="{Binding ElementName=popup,Path=IsOpen,Mode=TwoWay}"/>
+                            </b:Interaction.Behaviors>
+                        </Button>
+                        <Popup x:Name="popup" Placement="MousePoint" PlacementTarget="{Binding ElementName=btn}" StaysOpen="False" IsOpen="False">
+                            <Border Width="370" Height="280" BorderBrush="Black" BorderThickness="1" Background="White">
+                                <ContentControl>
+                                    <view:ParserConfig DataContext="{Binding DataContext.ParserConfig,RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                </ContentControl>
+                            </Border>
+                        </Popup>
                         <AdornerDecorator Grid.Row="1">
                             <ContentPresenter ClipToBounds="True"/>
                         </AdornerDecorator>

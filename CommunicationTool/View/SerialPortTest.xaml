@@ -7,6 +7,7 @@
         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:i="clr-namespace:CommunicationTool.Behaviors"
         xmlns:converter="clr-namespace:CommunicationTool.Converters"
+        xmlns:ctrl="clr-namespace:CommunicationTool.Control"
         xmlns:viewmodel="clr-namespace:CommunicationTool.ViewModel" 
         d:DataContext="{d:DesignInstance Type=viewmodel:SerialPortViewModel}"
         Style="{StaticResource TestWindow}"
@@ -175,11 +176,15 @@
             <StatusBarItem HorizontalAlignment="Right">
                 <Grid>
                     <Button Content="{Binding HasPopupVisible,Converter={StaticResource PopupStatusConverter}}" Command="{Binding HasPopupCommand}"/>
-                    <Popup IsOpen="{Binding HasPopupVisible}" StaysOpen="True" Placement="Right" PlacementTarget="{Binding ElementName=window}" AllowsTransparency="True" >
-                        <Grid Background="#33FFFF00" Width="500" Height="{Binding ActualHeight, ElementName=window, Mode=OneWay}">
+                    <ctrl:CustomPopup IsOpen="{Binding HasPopupVisible}" StaysOpen="True" Placement="Right" PlacementTarget="{Binding ElementName=window}" AllowsTransparency="True" >
+                        <Border Background="#66FFFFFF" CornerRadius="8" Width="500" Height="{Binding ActualHeight, ElementName=window, Mode=OneWay}">
+                            <Border Background="#66FFFF00" CornerRadius="8">
+                                <Grid>
 
-                        </Grid>
-                    </Popup>
+                                </Grid>
+                            </Border>
+                        </Border>
+                    </ctrl:CustomPopup>
                 </Grid>
             </StatusBarItem>
         </StatusBar>
