@@ -6,6 +6,15 @@ namespace CommunicationTool.Behaviors
 {
     internal class OpenPopupBehavior : Behavior<Button>
     {
+        public bool NotShow
+        {
+            get { return (bool)GetValue(NotShowProperty); }
+            set { SetValue(NotShowProperty, value); }
+        }
+
+        public static readonly DependencyProperty NotShowProperty =
+            DependencyProperty.Register("NotShow", typeof(bool), typeof(OpenPopupBehavior), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
         public bool Show
         {
             get { return (bool)GetValue(ShowProperty); }
@@ -24,7 +33,7 @@ namespace CommunicationTool.Behaviors
 
         private void AssociatedObject_Click(object sender, RoutedEventArgs e)
         {
-            Show = !Show;
+            if (!NotShow) Show = true;
         }
     }
 }

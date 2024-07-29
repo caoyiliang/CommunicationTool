@@ -67,8 +67,17 @@
                         </Grid.RowDefinitions>
                         <TextBlock Text="{TemplateBinding Title}" Margin="10" FontSize="12" VerticalAlignment="Center" />
                         <Button x:Name="btn" Content="分包规则" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,180,0" WindowChrome.IsHitTestVisibleInChrome="True">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{TemplateBinding Content}" Padding="5" Background="Transparent" Foreground="Purple" />
+                                        <TextBlock Text=":" Padding="5" Background="Transparent" Foreground="Purple" />
+                                        <TextBlock Text="{Binding DataContext.ParserConfig.ParserType,RelativeSource={RelativeSource AncestorType=Window}}" Padding="5" Background="Transparent" Foreground="Purple" />
+                                    </StackPanel>
+                                </ControlTemplate>
+                            </Button.Template>
                             <b:Interaction.Behaviors>
-                                <i:OpenPopupBehavior Show="{Binding ElementName=popup,Path=IsOpen,Mode=TwoWay}"/>
+                                <i:OpenPopupBehavior Show="{Binding ElementName=popup,Path=IsOpen,Mode=TwoWay}" NotShow="{Binding DataContext.IsConnect,RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </b:Interaction.Behaviors>
                         </Button>
                         <Popup x:Name="popup" Placement="MousePoint" PlacementTarget="{Binding ElementName=btn}" StaysOpen="False" IsOpen="False">

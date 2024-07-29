@@ -1,9 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Config;
 using Config.Model;
+using Parser;
+using Parser.Interfaces;
+using Parser.Parsers;
 using System.IO.Ports;
 using TopPortLib;
 using TopPortLib.Interfaces;
+using Utils;
 
 namespace CommunicationTool.ViewModel
 {
@@ -35,7 +40,9 @@ namespace CommunicationTool.ViewModel
         private ParserConfig _parserConfig;
 
         private readonly Connection _config;
+#pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
         private ITopPort? _SerialPort;
+#pragma warning restore CA1859 // 尽可能使用具体类型以提高性能
         public SerialPortViewModel(Connection config, SerialPortConnection connection)
         {
             PortNames = SerialPort.GetPortNames();
@@ -96,7 +103,7 @@ namespace CommunicationTool.ViewModel
                     DtrEnable = Connection.DTR,
                     RtsEnable = Connection.RTS
                 };
-                _SerialPort = new TopPort(serialPort, new Parser.Parsers.TimeParser());
+                _SerialPort = new TopPort(serialPort, NewParser());
 
                 _SerialPort.OnSentData += SerialPort_OnSentData;
                 _SerialPort.OnReceiveParsedData += SerialPort_OnReceiveParsedData;
@@ -112,6 +119,73 @@ namespace CommunicationTool.ViewModel
                     //ExceptionStr = "连接失败，检查链路";
                 }
             }
+        }
+
+        private IParser NewParser()
+        {
+            switch (ParserConfig.ParserType)
+            {
+                case ParserType.TimeParser:
+                    return new TimeParser(ParserConfig.Time);
+                case ParserType.HeadLengthParser:
+                    {
+
+                        var Head = ParserConfig.Head;
+                        if (string.IsNullOrEmpty(Head))
+                            return new HeadLengthParser(GetDataLength);
+                        else
+                            return new HeadLengthParser(StringByteUtils.StringToBytes(Head), GetDataLength);
+                    }
+                case ParserType.HeadFootParser:
+                    {
+                        if (string.IsNullOrEmpty(ParserConfig.Head) || string.IsNullOrEmpty(ParserConfig.Foot))
+                            throw new Exception("Head or Foot is null");
+                        return new HeadFootParser(StringByteUtils.StringToBytes(ParserConfig.Head), StringByteUtils.StringToBytes(ParserConfig.Foot));
+                    }
+                case ParserType.FootParser:
+                    {
+                        if (string.IsNullOrEmpty(ParserConfig.Foot))
+                            throw new Exception("Foot is null");
+                        return new FootParser(StringByteUtils.StringToBytes(ParserConfig.Foot));
+                    }
+                default:
+                    return new NoParser();
+            }
+        }
+
+        private async Task<GetDataLengthRsp> GetDataLength(byte[] data)
+        {
+            var headLenth = string.IsNullOrEmpty(ParserConfig.Head) ? 0 : StringByteUtils.StringToBytes(ParserConfig.Head).Length;
+            int Length = 0;
+            switch (ParserConfig.DataType)
+            {
+                case DataType.Float:
+                    if (data.Length < headLenth + 4) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
+                    Length = (int)StringByteUtils.ToSingle(data, headLenth, ParserConfig.IsHighByteBefore);
+                    break;
+                case DataType.Int16:
+                    if (data.Length < headLenth + 2) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
+                    Length = StringByteUtils.ToInt16(data, headLenth, ParserConfig.IsHighByteBefore);
+                    break;
+                case DataType.UInt16:
+                    if (data.Length < headLenth + 2) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
+                    Length = StringByteUtils.ToUInt16(data, headLenth, ParserConfig.IsHighByteBefore);
+                    break;
+                case DataType.Int32:
+                    if (data.Length < headLenth + 4) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
+                    Length = StringByteUtils.ToInt32(data, headLenth, ParserConfig.IsHighByteBefore);
+                    break;
+                case DataType.固定长度:
+                    Length = ParserConfig.Length;
+                    break;
+                default:
+                    break;
+            }
+            return await Task.FromResult(new GetDataLengthRsp()
+            {
+                Length = Length,
+                StateCode = Parser.StateCode.Success
+            });
         }
 
         private bool CanOpen()
