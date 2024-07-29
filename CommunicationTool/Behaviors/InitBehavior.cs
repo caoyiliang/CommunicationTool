@@ -29,9 +29,9 @@ namespace CommunicationTool.Behaviors
 
         private void AssociatedObject_Loaded(object sender, RoutedEventArgs e)
         {
-            foreach (var item in Connection.SerialPortConnections)
+            foreach (var item in Connection.SerialPortTests)
             {
-                var test = new SerialPortTest { DataContext = new SerialPortViewModel(Connection, item) };
+                var test = new View.SerialPortTest { DataContext = new SerialPortViewModel(Connection, item) };
                 test.Show();
             }
         }

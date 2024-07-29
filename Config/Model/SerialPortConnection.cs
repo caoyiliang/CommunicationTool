@@ -6,8 +6,6 @@ namespace Config.Model
     public partial class SerialPortConnection : ObservableObject
     {
         [ObservableProperty]
-        private Guid _Id;
-        [ObservableProperty]
         private string _PortName = "COM1";
         [ObservableProperty]
         private int _BaudRate = 9600;
@@ -21,8 +19,6 @@ namespace Config.Model
         private bool _DTR = false;
         [ObservableProperty]
         private bool _RTS = false;
-        [ObservableProperty]
-        private ParserConfig _ParserConfig = new();
 
         public override string ToString()
         {

@@ -35,36 +35,48 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private bool _isOpen;
         [ObservableProperty]
-        private SerialPortConnection _connection;
+        private SerialPortTest _test;
+        [ObservableProperty]
+        private SerialPortConnection _serialPortConnection;
         [ObservableProperty]
         private ParserConfig _parserConfig;
+        [ObservableProperty]
+        private string? _Title;
 
         private readonly Connection _config;
 #pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
         private ITopPort? _SerialPort;
 #pragma warning restore CA1859 // 尽可能使用具体类型以提高性能
-        public SerialPortViewModel(Connection config, SerialPortConnection connection)
+        public SerialPortViewModel(Connection config, SerialPortTest test)
         {
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
             _config = config;
-            Connection = connection;
-            Connection.PropertyChanged += Connection_PropertyChanged;
-            ParserConfig = connection.ParserConfig;
+            Test = test;
+            Title = test.TestName;
+            SerialPortConnection = test.SerialPortConnection;
+            SerialPortConnection.PropertyChanged += SerialPortConnection_PropertyChanged; ;
+            ParserConfig = test.ParserConfig;
             ParserConfig.PropertyChanged += ParserConfig_PropertyChanged;
-            Status = Connection.ToString();
+            Status = SerialPortConnection.ToString();
+        }
+
+        partial void OnTitleChanged(string? value)
+        {
+            Test.TestName = value;
+            _ = Task.Run(async () => await _config.TrySaveChangeAsync());
+        }
+
+        private async void SerialPortConnection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            await _config.TrySaveChangeAsync();
+            Status = SerialPortConnection.ToString();
         }
 
         private async void ParserConfig_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             await _config.TrySaveChangeAsync();
-        }
-
-        private async void Connection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            await _config.TrySaveChangeAsync();
-            Status = Connection.ToString();
         }
 
         [RelayCommand]
@@ -84,7 +96,7 @@ namespace CommunicationTool.ViewModel
         [RelayCommand]
         private async Task CloseAsync()
         {
-            _config.SerialPortConnections.Remove(Connection);
+            _config.SerialPortTests.Remove(Test);
             await _config.TrySaveChangeAsync();
         }
 
@@ -98,10 +110,10 @@ namespace CommunicationTool.ViewModel
             }
             else
             {
-                var serialPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
+                var serialPort = new Communication.Bus.PhysicalPort.SerialPort(SerialPortConnection.PortName, SerialPortConnection.BaudRate, SerialPortConnection.Parity, SerialPortConnection.DataBits, SerialPortConnection.StopBits)
                 {
-                    DtrEnable = Connection.DTR,
-                    RtsEnable = Connection.RTS
+                    DtrEnable = SerialPortConnection.DTR,
+                    RtsEnable = SerialPortConnection.RTS
                 };
                 _SerialPort = new TopPort(serialPort, NewParser());
 

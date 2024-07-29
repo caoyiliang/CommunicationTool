@@ -65,7 +65,11 @@
                             <RowDefinition Height="35" />
                             <RowDefinition />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="{TemplateBinding Title}" Margin="10" FontSize="12" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding Title}" Background="Transparent" BorderThickness="0" Padding="2" Margin="8" FontSize="12" HorizontalAlignment="Left" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+                            <b:Interaction.Behaviors>
+                                <i:TitleNameEditBehavior/>
+                            </b:Interaction.Behaviors>
+                        </TextBox>
                         <Button x:Name="btn" Content="分包规则" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,180,0" WindowChrome.IsHitTestVisibleInChrome="True">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">

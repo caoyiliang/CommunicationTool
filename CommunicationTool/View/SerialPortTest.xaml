@@ -151,22 +151,22 @@
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
                                 <Label Content="串口号"/>
-                                <ComboBox ItemsSource="{Binding PortNames}" SelectedItem="{Binding Connection.PortName}" Grid.Column="1"/>
+                                <ComboBox ItemsSource="{Binding PortNames}" SelectedItem="{Binding SerialPortConnection.PortName}" Grid.Column="1"/>
                                 <Label Content="波特率" Grid.Row="1"/>
-                                <ComboBox ItemsSource="{Binding BaudRates}" SelectedItem="{Binding Connection.BaudRate}" Grid.Column="1" Grid.Row="1" IsEditable="True"/>
+                                <ComboBox ItemsSource="{Binding BaudRates}" SelectedItem="{Binding SerialPortConnection.BaudRate}" Grid.Column="1" Grid.Row="1" IsEditable="True"/>
                                 <Label Content="数据位" Grid.Row="2"/>
-                                <ComboBox ItemsSource="{Binding DataBits}" SelectedItem="{Binding Connection.DataBits}" Grid.Column="1" Grid.Row="2"/>
+                                <ComboBox ItemsSource="{Binding DataBits}" SelectedItem="{Binding SerialPortConnection.DataBits}" Grid.Column="1" Grid.Row="2"/>
                                 <Label Content="停止位" Grid.Row="3"/>
-                                <ComboBox ItemsSource="{Binding StopBits}" SelectedItem="{Binding Connection.StopBits}" Grid.Column="1" Grid.Row="3"/>
+                                <ComboBox ItemsSource="{Binding StopBits}" SelectedItem="{Binding SerialPortConnection.StopBits}" Grid.Column="1" Grid.Row="3"/>
                                 <Label Content="校验位" Grid.Row="4"/>
-                                <ComboBox ItemsSource="{Binding Parity}" SelectedItem="{Binding Connection.Parity}" Grid.Column="1" Grid.Row="4"/>
+                                <ComboBox ItemsSource="{Binding Parity}" SelectedItem="{Binding SerialPortConnection.Parity}" Grid.Column="1" Grid.Row="4"/>
                                 <Grid Grid.Column="1" Grid.Row="5">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
                                         <ColumnDefinition/>
                                     </Grid.ColumnDefinitions>
-                                    <CheckBox Content="DTR" IsChecked="{Binding Connection.DTR}"/>
-                                    <CheckBox Content="RTS" IsChecked="{Binding Connection.RTS}" Grid.Column="1"/>
+                                    <CheckBox Content="DTR" IsChecked="{Binding SerialPortConnection.DTR}"/>
+                                    <CheckBox Content="RTS" IsChecked="{Binding SerialPortConnection.RTS}" Grid.Column="1"/>
                                 </Grid>
                             </Grid>
                         </Grid>

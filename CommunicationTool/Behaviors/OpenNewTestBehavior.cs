@@ -40,9 +40,9 @@ namespace CommunicationTool.Behaviors
             {
                 case TestType.SerialPort:
                     {
-                        var config = new SerialPortConnection() { Id = Guid.NewGuid() };
-                        Connection.SerialPortConnections.Add(config);
-                        var test = new SerialPortTest { DataContext = new SerialPortViewModel(Connection, config) };
+                        var config = new Config.Model.SerialPortTest() { Id = Guid.NewGuid() };
+                        Connection.SerialPortTests.Add(config);
+                        var test = new View.SerialPortTest { DataContext = new SerialPortViewModel(Connection, config) };
                         test.Show();
                     }
                     break;
