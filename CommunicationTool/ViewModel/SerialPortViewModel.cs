@@ -43,9 +43,15 @@ namespace CommunicationTool.ViewModel
             Parity = Enum.GetValues<Parity>();
             _config = config;
             Connection = connection;
-            ParserConfig = connection.ParserConfig;
             Connection.PropertyChanged += Connection_PropertyChanged;
+            ParserConfig = connection.ParserConfig;
+            ParserConfig.PropertyChanged += ParserConfig_PropertyChanged;
             Status = Connection.ToString();
+        }
+
+        private async void ParserConfig_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            await _config.TrySaveChangeAsync();
         }
 
         private async void Connection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
