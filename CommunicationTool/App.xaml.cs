@@ -3,6 +3,7 @@ using Config;
 using LoggerNLog;
 using LogInterface;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 using System.Windows;
 
 namespace CommunicationTool
@@ -36,6 +37,7 @@ namespace CommunicationTool
 
         private async void Application_Startup(object sender, StartupEventArgs e)
         {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Services = await ConfigureServices();
             Logs.LogFactory = Services.GetRequiredService<ILogFactory>();
             _logger = Logs.LogFactory.GetLogger<App>();
