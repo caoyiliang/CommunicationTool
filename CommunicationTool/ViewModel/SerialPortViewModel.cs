@@ -1,10 +1,12 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunicationTool.Model;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Config;
 using Config.Model;
 using Parser;
 using Parser.Interfaces;
 using Parser.Parsers;
+using System.Collections.ObjectModel;
 using System.IO.Ports;
 using TopPortLib;
 using TopPortLib.Interfaces;
@@ -43,6 +45,10 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private string? _Title;
 
+        [ObservableProperty]
+        private RecType _SelectedShowType = RecType.Hex;
+
+        public ObservableCollection<CommunicationData> CommunicationDatas { get; set; } = [];
         private readonly Connection _config;
 #pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
         private ITopPort? _SerialPort;
@@ -60,6 +66,14 @@ namespace CommunicationTool.ViewModel
             ParserConfig = test.ParserConfig;
             ParserConfig.PropertyChanged += ParserConfig_PropertyChanged;
             Status = SerialPortConnection.ToString();
+        }
+
+        partial void OnSelectedShowTypeChanged(RecType value)
+        {
+            foreach (var item in CommunicationDatas)
+            {
+                item.ShowType = value;
+            }
         }
 
         partial void OnTitleChanged(string? value)
@@ -229,9 +243,12 @@ namespace CommunicationTool.ViewModel
             });
         }
 
-        private Task SerialPort_OnReceiveParsedData(byte[] data)
+        private async Task SerialPort_OnReceiveParsedData(byte[] data)
         {
-            throw new NotImplementedException();
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                CommunicationDatas.Add(new CommunicationData(data, SelectedShowType));
+            });
         }
 
         private Task SerialPort_OnSentData(byte[] data)

@@ -8,3 +8,11 @@ public enum TestType
     ClassicBluetoothClient,
     ClassicBluetoothServer
 }
+
+public enum RecType
+{
+    Hex,
+    Ascii,
+    Utf8,
+    Gb2312
+}

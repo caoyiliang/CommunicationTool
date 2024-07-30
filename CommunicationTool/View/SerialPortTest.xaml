@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CommunicationTool.View" 
+        xmlns:l="clr-namespace:CommunicationTool"
         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:i="clr-namespace:CommunicationTool.Behaviors"
         xmlns:converter="clr-namespace:CommunicationTool.Converters"
@@ -16,6 +17,7 @@
     <Window.Resources>
         <converter:SerialPortConnectStatusConverter x:Key="SerialPortConnectStatusConverter"/>
         <converter:PopupStatusConverter x:Key="PopupStatusConverter"/>
+        <converter:RadioButtonCheckedConverter x:Key="RadioButtonCheckedConverter"/>
     </Window.Resources>
     <b:Interaction.Behaviors>
         <i:CloseBehavior Command="{Binding CloseCommand}"/>
@@ -45,15 +47,43 @@
                     </Style>
                 </StackPanel.Resources>
                 <CheckBox Content="自动存储" IsChecked="True"/>
-                <RadioButton Content="Hex"/>
-                <RadioButton Content="ASCII"/>
-                <RadioButton Content="UTF"/>
-                <RadioButton Content="GB2312"/>
+                <RadioButton Content="Hex" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Hex}}"/>
+                <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Ascii}}"/>
+                <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Utf8}}"/>
+                <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Gb2312}}"/>
                 <CheckBox Content="显示接收时间" IsChecked="True"/>
                 <CheckBox Content="显示发送" IsChecked="True"/>
             </StackPanel>
-            <StackPanel Grid.Row="2">
 
+            <ItemsControl ItemsSource="{Binding CommunicationDatas}" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" Margin="10,0" Grid.Row="1">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding DateTime,StringFormat='{}{0:yyyy-MM-dd HH:mm:ss.fff}'}" Margin="5"/>
+                            <TextBlock Text=" -> " Margin="5"/>
+                            <TextBox Text="{Binding Message,Mode=OneWay}" IsReadOnly="True" Margin="5" BorderThickness="0" Background="Transparent"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" CanContentScroll="True" Focusable="False">
+                            <b:Interaction.Behaviors>
+                                <i:ScrollViewerBehavior AutoScroll="True"/>
+                            </b:Interaction.Behaviors>
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+            </ItemsControl>
+
+            <StackPanel Orientation="Horizontal" Margin="10,0" Grid.Row="2">
+                <TextBlock Text="接收字节数:"/>
             </StackPanel>
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
@@ -102,7 +132,6 @@
                     <Button Content="发送" Margin="10" Padding="10,5"/>
                 </StackPanel>
             </Grid>
-
         </Grid>
         <StatusBar Padding="5" Grid.Row="2" Grid.ColumnSpan="2">
             <StatusBar.Resources>

@@ -30,10 +30,10 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
+            <RowDefinition Height="60"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <ComboBox ItemsSource="{Binding Source={StaticResource ParserTypes}}" SelectedItem="{Binding ParserType}" Width="200" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="30,0,0,0" Padding="5" />
+        <ComboBox ItemsSource="{Binding Source={StaticResource ParserTypes}}" SelectedItem="{Binding ParserType}" Width="200" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="30,0,0,0" Padding="5" />
         <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding ParserType,Converter={StaticResource TimeParserSetShowConverter}}">
             <TextBlock Text="分包时间:" VerticalAlignment="Center"/>
             <TextBox Width="100" VerticalAlignment="Center" Margin="5" Padding="5" Text="{Binding Time}" />
