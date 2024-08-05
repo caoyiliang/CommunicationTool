@@ -47,6 +47,8 @@ namespace CommunicationTool.ViewModel
 
         [ObservableProperty]
         private RecType _SelectedShowType = RecType.Hex;
+        [ObservableProperty]
+        private bool _AutoScroll = true;
 
         public ObservableCollection<CommunicationData> CommunicationDatas { get; set; } = [];
         private readonly Connection _config;

@@ -6,18 +6,14 @@ namespace CommunicationTool.Behaviors
 {
     internal class ScrollViewerBehavior : Behavior<ScrollViewer>
     {
-        public static readonly DependencyProperty AutoScrollProperty =
-            DependencyProperty.Register(
-                nameof(AutoScroll),
-                typeof(bool),
-                typeof(ScrollViewerBehavior),
-                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-
         public bool AutoScroll
         {
             get { return (bool)GetValue(AutoScrollProperty); }
             set { SetValue(AutoScrollProperty, value); }
         }
+
+        public static readonly DependencyProperty AutoScrollProperty =
+            DependencyProperty.Register("AutoScroll", typeof(bool), typeof(ScrollViewerBehavior), new PropertyMetadata(true));
 
         protected override void OnAttached()
         {
