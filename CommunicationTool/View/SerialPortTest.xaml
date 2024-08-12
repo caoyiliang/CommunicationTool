@@ -48,10 +48,10 @@
                     </Style>
                 </StackPanel.Resources>
                 <CheckBox Content="自动存储" IsChecked="True"/>
-                <RadioButton Content="Hex" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Hex}}"/>
-                <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Ascii}}"/>
-                <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Utf8}}"/>
-                <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Gb2312}}"/>
+                <RadioButton Content="HEX" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.HEX}}"/>
+                <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.ASCII}}"/>
+                <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.UTF8}}"/>
+                <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.GB2312}}"/>
                 <CheckBox Content="显示接收时间" IsChecked="True"/>
                 <CheckBox Content="显示发送" IsChecked="True"/>
             </StackPanel>
@@ -109,8 +109,9 @@
                 <StackPanel Orientation="Horizontal">
                     <Button Content="{Binding IsOpen,Converter={StaticResource SerialPortConnectStatusConverter}}" Margin="10" Padding="10,5" Command="{Binding ConnectCommand}"/>
                     <TextBlock Text="快速发送：" VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding SendTypes}" SelectedItem="{Binding SelectedSendType}" VerticalContentAlignment="Center" Width="80" Margin="0,10"/>
                 </StackPanel>
-                <TextBox Margin="10" Grid.Column="1" VerticalContentAlignment="Center"/>
+                <TextBox Text="{Binding SendData,UpdateSourceTrigger=PropertyChanged}" Margin="10" Grid.Column="1" VerticalContentAlignment="Center"/>
                 <StackPanel Orientation="Horizontal" Grid.Column="2">
                     <Grid>
                         <Grid.Resources>
@@ -123,28 +124,11 @@
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <CheckBox Content="回车" IsChecked="True"/>
-                        <CheckBox Content="换行" IsChecked="True" Grid.Row="1"/>
+                        <CheckBox Content="回车" IsChecked="{Binding CR}"/>
+                        <CheckBox Content="换行" IsChecked="{Binding LF}" Grid.Row="1"/>
                     </Grid>
-                    <ComboBox VerticalContentAlignment="Center" Width="100" Margin="5,10">
-                        <ComboBoxItem Content="None"/>
-                        <ComboBoxItem Content="Modbus"/>
-                        <ComboBoxItem Content="Modbus_R"/>
-                        <ComboBoxItem Content="GB"/>
-                        <ComboBoxItem Content="GB_string"/>
-                        <ComboBoxItem Content="GB_protocol"/>
-                        <ComboBoxItem Content="HB"/>
-                        <ComboBoxItem Content="HB_string"/>
-                        <ComboBoxItem Content="HB_protocol"/>
-                        <ComboBoxItem Content="UCRC"/>
-                    </ComboBox>
-                    <ComboBox VerticalContentAlignment="Center" Width="80" Margin="0,10">
-                        <ComboBoxItem Content="Hex"/>
-                        <ComboBoxItem Content="ASCII"/>
-                        <ComboBoxItem Content="UTF"/>
-                        <ComboBoxItem Content="GB2312"/>
-                    </ComboBox>
-                    <Button Content="发送" Margin="10" Padding="10,5"/>
+                    <ComboBox ItemsSource="{Binding CrcTypes}" SelectedItem="{Binding CrcType}" VerticalContentAlignment="Center" Width="100" Margin="5,10"/>
+                    <Button Content="发送" Margin="10" Padding="10,5" Command="{Binding SendCommand}"/>
                 </StackPanel>
             </Grid>
         </Grid>

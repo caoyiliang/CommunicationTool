@@ -8,6 +8,8 @@ using Parser.Interfaces;
 using Parser.Parsers;
 using System.Collections.ObjectModel;
 using System.IO.Ports;
+using System.Text;
+using System.Windows;
 using TopPortLib;
 using TopPortLib.Interfaces;
 using Utils;
@@ -31,8 +33,11 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private IEnumerable<Parity> _parity;
         [ObservableProperty]
+        private IEnumerable<DataType> _sendTypes;
+        [ObservableProperty]
         private string? _status = "未连接";
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SendCommand))]
         private bool _isConnect;
         [ObservableProperty]
         private bool _isOpen;
@@ -49,9 +54,22 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private Int128 _requestLength;
         [ObservableProperty]
-        private DataType _SelectedShowType = DataType.Hex;
+        private DataType _SelectedShowType = DataType.HEX;
+        [ObservableProperty]
+        private DataType _SelectedSendType = DataType.HEX;
         [ObservableProperty]
         private bool _AutoScroll = true;
+        [ObservableProperty]
+        private bool _CR;
+        [ObservableProperty]
+        private bool _LF;
+        [ObservableProperty]
+        private CrcType _CrcType;
+        [ObservableProperty]
+        private IEnumerable<CrcType> _CrcTypes;
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SendCommand))]
+        private string? _SendData;
 
         public ObservableCollection<CommunicationData> CommunicationDatas { get; set; } = [];
         private readonly Connection _config;
@@ -63,6 +81,8 @@ namespace CommunicationTool.ViewModel
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
+            SendTypes = Enum.GetValues<DataType>();
+            CrcTypes = Enum.GetValues<CrcType>();
             _config = config;
             Test = test;
             Title = test.TestName;
@@ -101,7 +121,11 @@ namespace CommunicationTool.ViewModel
         [RelayCommand]
         private async Task SetSerialPortConfigAsync()
         {
-            if (!IsConnect) IsPopupVisible = true;
+            if (!IsConnect)
+            {
+                PortNames = SerialPort.GetPortNames();
+                IsPopupVisible = true;
+            }
             await Task.CompletedTask;
         }
 
@@ -115,7 +139,7 @@ namespace CommunicationTool.ViewModel
         [RelayCommand]
         private async Task CloseAsync()
         {
-            await _SerialPort!.CloseAsync();
+            if (_SerialPort != null) await _SerialPort.CloseAsync();
             _config.SerialPortTests.Remove(Test);
             await _config.TrySaveChangeAsync();
         }
@@ -257,9 +281,74 @@ namespace CommunicationTool.ViewModel
             });
         }
 
-        private Task SerialPort_OnSentData(byte[] data)
+        private async Task SerialPort_OnSentData(byte[] data)
         {
-            throw new NotImplementedException();
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                CommunicationDatas.Add(new CommunicationData(data, SelectedShowType, TransferDirection.Request));
+                RequestLength += data.Length;
+            });
+        }
+
+        [RelayCommand(CanExecute = nameof(CanSend))]
+        private async Task SendAsync()
+        {
+            if (string.IsNullOrEmpty(SendData)) return;
+
+            byte[] cmd = SelectedSendType switch
+            {
+                DataType.ASCII => Encoding.ASCII.GetBytes(SendData),
+                DataType.UTF8 => Encoding.UTF8.GetBytes(SendData),
+                DataType.GB2312 => Encoding.GetEncoding("GB2312").GetBytes(SendData),
+                _ => HexStringToByte(SendData),
+            };
+            if (cmd.Length == 0) return;
+            cmd = CrcType switch
+            {
+                CrcType.Modbus => CRC.Crc16(cmd),
+                CrcType.Modbus_R => StringByteUtils.ComibeByteArray(cmd, CRC.CRC16_R(cmd)),
+                CrcType.GB => StringByteUtils.ComibeByteArray(cmd, CRC.GBcrc16(cmd, cmd.Length)),
+                CrcType.GB_string => StringByteUtils.ComibeByteArray(cmd, Encoding.GetEncoding("gb2312").GetBytes(StringByteUtils.BytesToString(CRC.GBcrc16(cmd, cmd.Length)).Replace(" ", ""))),
+                CrcType.GB_protocol => ProcessGBProtocol(cmd),
+                CrcType.HB => StringByteUtils.ComibeByteArray(cmd, CRC.HBcrc16(cmd, cmd.Length)),
+                CrcType.HB_string => StringByteUtils.ComibeByteArray(cmd, Encoding.GetEncoding("gb2312").GetBytes(StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", ""))),
+                CrcType.HB_protocol => ProcessHBProtocol(cmd),
+                CrcType.UCRC => StringByteUtils.ComibeByteArray(cmd, StringByteUtils.GetBytes(CRC.UpdateCRC(cmd, cmd.Length), true)),
+                _ => cmd,
+            };
+            if (CR) cmd = [.. cmd, 0x0d];
+            if (LF) cmd = [.. cmd, 0x0a];
+            if (IsConnect) await _SerialPort!.SendAsync(cmd);
+        }
+
+        private bool CanSend()
+        {
+            return IsConnect && !string.IsNullOrEmpty(SendData);
+        }
+
+        private static byte[] HexStringToByte(string SendData)
+        {
+            try
+            {
+                return StringByteUtils.StringToBytes(SendData);
+            }
+            catch
+            {
+                MessageBox.Show("请输入正确的Hex值");
+                return [];
+            }
+        }
+
+        private static byte[] ProcessGBProtocol(byte[] cmd)
+        {
+            var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
+            return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.GBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
+        }
+
+        private static byte[] ProcessHBProtocol(byte[] cmd)
+        {
+            var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
+            return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
         }
     }
 }

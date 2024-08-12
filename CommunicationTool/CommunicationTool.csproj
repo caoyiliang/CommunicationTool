@@ -12,6 +12,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="CSoft.Communication.Bluetooth" Version="1.0.3" />
     <PackageReference Include="CSoft.LoggerNLog" Version="8.0.2" />
+    <PackageReference Include="CSoft.Utils" Version="8.0.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
     <PackageReference Include="Steema.TeeChart.NET" Version="4.2024.7.29" />

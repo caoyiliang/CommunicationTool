@@ -11,14 +11,28 @@ public enum TestType
 
 public enum DataType
 {
-    Hex,
-    Ascii,
-    Utf8,
-    Gb2312
+    HEX,
+    ASCII,
+    UTF8,
+    GB2312
 }
 
 public enum TransferDirection
 {
     Request,
     Response
+}
+
+public enum CrcType
+{
+    None,
+    Modbus,
+    Modbus_R,
+    GB,
+    GB_string,
+    GB_protocol,
+    HB,
+    HB_string,
+    HB_protocol,
+    UCRC
 }

@@ -15,9 +15,9 @@ namespace CommunicationTool.Model
                 {
                     return ShowType switch
                     {
-                        DataType.Ascii => Encoding.ASCII.GetString(bytes),
-                        DataType.Utf8 => Encoding.UTF8.GetString(bytes),
-                        DataType.Gb2312 => Encoding.GetEncoding("GB2312").GetString(bytes),
+                        DataType.ASCII => Encoding.ASCII.GetString(bytes),
+                        DataType.UTF8 => Encoding.UTF8.GetString(bytes),
+                        DataType.GB2312 => Encoding.GetEncoding("GB2312").GetString(bytes),
                         _ => Utils.StringByteUtils.BytesToString(bytes),
                     };
                 }
