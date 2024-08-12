@@ -3,20 +3,16 @@ using System.Windows.Data;
 
 namespace CommunicationTool.Converters
 {
-    internal class RadioButtonCheckedConverter : IValueConverter
+    class TransferDirectionConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return (DataType)value == (DataType)parameter;
+            return (TransferDirection)value == TransferDirection.Request ? " <- " : " -> ";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if ((bool)value && Enum.TryParse(typeof(DataType), parameter.ToString(), out var result))
-            {
-                return result;
-            }
-            return Binding.DoNothing;
+            throw new NotImplementedException();
         }
     }
 }

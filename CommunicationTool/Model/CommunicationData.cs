@@ -3,7 +3,7 @@ using System.Text;
 
 namespace CommunicationTool.Model
 {
-    public partial class CommunicationData(byte[] bytes, RecType showType) : ObservableObject
+    public partial class CommunicationData(byte[] bytes, DataType showType, TransferDirection transferDirection = TransferDirection.Request) : ObservableObject
     {
         public DateTime DateTime { get; } = DateTime.Now;
 
@@ -15,9 +15,9 @@ namespace CommunicationTool.Model
                 {
                     return ShowType switch
                     {
-                        RecType.Ascii => Encoding.ASCII.GetString(bytes),
-                        RecType.Utf8 => Encoding.UTF8.GetString(bytes),
-                        RecType.Gb2312 => Encoding.GetEncoding("GB2312").GetString(bytes),
+                        DataType.Ascii => Encoding.ASCII.GetString(bytes),
+                        DataType.Utf8 => Encoding.UTF8.GetString(bytes),
+                        DataType.Gb2312 => Encoding.GetEncoding("GB2312").GetString(bytes),
                         _ => Utils.StringByteUtils.BytesToString(bytes),
                     };
                 }
@@ -30,6 +30,9 @@ namespace CommunicationTool.Model
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Message))]
-        private RecType _showType = showType;
+        private DataType _showType = showType;
+
+        [ObservableProperty]
+        private TransferDirection _transferDirection = transferDirection;
     }
 }

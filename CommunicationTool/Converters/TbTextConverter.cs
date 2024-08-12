@@ -8,7 +8,7 @@ namespace CommunicationTool.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return (DataType)value == DataType.固定长度 ? "固定长度:" : "高字节在前:";
+            return (Config.DataType)value == Config.DataType.固定长度 ? "固定长度:" : "高字节在前:";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

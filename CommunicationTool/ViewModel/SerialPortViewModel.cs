@@ -44,9 +44,12 @@ namespace CommunicationTool.ViewModel
         private ParserConfig _parserConfig;
         [ObservableProperty]
         private string? _Title;
-
         [ObservableProperty]
-        private RecType _SelectedShowType = RecType.Hex;
+        private Int128 _rsponseLength;
+        [ObservableProperty]
+        private Int128 _requestLength;
+        [ObservableProperty]
+        private DataType _SelectedShowType = DataType.Hex;
         [ObservableProperty]
         private bool _AutoScroll = true;
 
@@ -70,7 +73,7 @@ namespace CommunicationTool.ViewModel
             Status = SerialPortConnection.ToString();
         }
 
-        partial void OnSelectedShowTypeChanged(RecType value)
+        partial void OnSelectedShowTypeChanged(DataType value)
         {
             foreach (var item in CommunicationDatas)
             {
@@ -112,6 +115,7 @@ namespace CommunicationTool.ViewModel
         [RelayCommand]
         private async Task CloseAsync()
         {
+            await _SerialPort!.CloseAsync();
             _config.SerialPortTests.Remove(Test);
             await _config.TrySaveChangeAsync();
         }
@@ -157,7 +161,6 @@ namespace CommunicationTool.ViewModel
                     return new TimeParser(ParserConfig.Time);
                 case ParserType.HeadLengthParser:
                     {
-
                         var Head = ParserConfig.Head;
                         if (string.IsNullOrEmpty(Head))
                             return new HeadLengthParser(GetDataLength);
@@ -187,23 +190,23 @@ namespace CommunicationTool.ViewModel
             int Length = 0;
             switch (ParserConfig.DataType)
             {
-                case DataType.Float:
+                case Config.DataType.Float:
                     if (data.Length < headLenth + 4) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = (int)StringByteUtils.ToSingle(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case DataType.Int16:
+                case Config.DataType.Int16:
                     if (data.Length < headLenth + 2) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = StringByteUtils.ToInt16(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case DataType.UInt16:
+                case Config.DataType.UInt16:
                     if (data.Length < headLenth + 2) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = StringByteUtils.ToUInt16(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case DataType.Int32:
+                case Config.DataType.Int32:
                     if (data.Length < headLenth + 4) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = StringByteUtils.ToInt32(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case DataType.固定长度:
+                case Config.DataType.固定长度:
                     Length = ParserConfig.Length;
                     break;
                 default:
@@ -249,7 +252,8 @@ namespace CommunicationTool.ViewModel
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
-                CommunicationDatas.Add(new CommunicationData(data, SelectedShowType));
+                CommunicationDatas.Add(new CommunicationData(data, SelectedShowType, TransferDirection.Response));
+                RsponseLength += data.Length;
             });
         }
 

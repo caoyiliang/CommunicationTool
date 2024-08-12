@@ -9,10 +9,16 @@ public enum TestType
     ClassicBluetoothServer
 }
 
-public enum RecType
+public enum DataType
 {
     Hex,
     Ascii,
     Utf8,
     Gb2312
+}
+
+public enum TransferDirection
+{
+    Request,
+    Response
 }

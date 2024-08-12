@@ -18,6 +18,7 @@
         <converter:SerialPortConnectStatusConverter x:Key="SerialPortConnectStatusConverter"/>
         <converter:PopupStatusConverter x:Key="PopupStatusConverter"/>
         <converter:RadioButtonCheckedConverter x:Key="RadioButtonCheckedConverter"/>
+        <converter:TransferDirectionConverter x:Key="TransferDirectionConverter"/>
     </Window.Resources>
     <b:Interaction.Behaviors>
         <i:CloseBehavior Command="{Binding CloseCommand}"/>
@@ -47,10 +48,10 @@
                     </Style>
                 </StackPanel.Resources>
                 <CheckBox Content="自动存储" IsChecked="True"/>
-                <RadioButton Content="Hex" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Hex}}"/>
-                <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Ascii}}"/>
-                <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Utf8}}"/>
-                <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:RecType.Gb2312}}"/>
+                <RadioButton Content="Hex" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Hex}}"/>
+                <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Ascii}}"/>
+                <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Utf8}}"/>
+                <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.Gb2312}}"/>
                 <CheckBox Content="显示接收时间" IsChecked="True"/>
                 <CheckBox Content="显示发送" IsChecked="True"/>
             </StackPanel>
@@ -65,7 +66,7 @@
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding DateTime,StringFormat='{}{0:yyyy-MM-dd HH:mm:ss.fff}'}" Margin="5"/>
-                            <TextBlock Text=" -> " Margin="5"/>
+                            <TextBlock Text="{Binding TransferDirection,Converter={StaticResource TransferDirectionConverter}}" Margin="5"/>
                             <TextBox Text="{Binding Message,Mode=OneWay}" IsReadOnly="True" Margin="5" BorderThickness="0" Background="Transparent"/>
                         </StackPanel>
                     </DataTemplate>
@@ -81,15 +82,21 @@
                     </ControlTemplate>
                 </ItemsControl.Template>
             </ItemsControl>
-            
+
             <DockPanel Grid.Row="2">
+                <DockPanel.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="Margin" Value="2"/>
+                    </Style>
+                </DockPanel.Resources>
                 <StackPanel Orientation="Horizontal" Margin="10,3">
-                    <TextBlock Text="接收字节数:" VerticalAlignment="Center"/>
-                    <TextBlock Text="0" VerticalAlignment="Center" TextDecorations="Underline" TextWrapping="Wrap"/>
+                    <TextBlock Text="接收字节数:"/>
+                    <TextBlock Text="{Binding RsponseLength}" TextDecorations="Underline" TextWrapping="Wrap"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="50,0">
-                    <TextBlock Text="发送字节数:" VerticalAlignment="Center"/>
-                    <TextBlock Text="0" VerticalAlignment="Center" TextDecorations="Underline" TextWrapping="Wrap"/>
+                    <TextBlock Text="发送字节数:"/>
+                    <TextBlock Text="{Binding RequestLength}" TextDecorations="Underline" TextWrapping="Wrap"/>
                 </StackPanel>
                 <CheckBox IsChecked="{Binding AutoScroll}" Content="自动滚动" Margin="10,0" HorizontalAlignment="Right" VerticalAlignment="Center" DockPanel.Dock="Right"/>
             </DockPanel>
