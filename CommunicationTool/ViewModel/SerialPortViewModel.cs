@@ -6,7 +6,6 @@ using Config.Model;
 using Parser;
 using Parser.Interfaces;
 using Parser.Parsers;
-using System.Collections.ObjectModel;
 using System.IO.Ports;
 using System.Text;
 using System.Windows;
@@ -50,15 +49,7 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private string? _Title;
         [ObservableProperty]
-        private Int128 _rsponseLength;
-        [ObservableProperty]
-        private Int128 _requestLength;
-        [ObservableProperty]
-        private DataType _SelectedShowType = DataType.HEX;
-        [ObservableProperty]
         private DataType _SelectedSendType = DataType.HEX;
-        [ObservableProperty]
-        private bool _AutoScroll = true;
         [ObservableProperty]
         private bool _CR;
         [ObservableProperty]
@@ -70,8 +61,9 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(SendCommand))]
         private string? _SendData;
+        [ObservableProperty]
+        private ReceiveViewModel _receiveViewModel = new();
 
-        public ObservableCollection<CommunicationData> CommunicationDatas { get; set; } = [];
         private readonly Connection _config;
 #pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
         private ITopPort? _SerialPort;
@@ -93,13 +85,7 @@ namespace CommunicationTool.ViewModel
             Status = SerialPortConnection.ToString();
         }
 
-        partial void OnSelectedShowTypeChanged(DataType value)
-        {
-            foreach (var item in CommunicationDatas)
-            {
-                item.ShowType = value;
-            }
-        }
+
 
         partial void OnTitleChanged(string? value)
         {
@@ -276,8 +262,8 @@ namespace CommunicationTool.ViewModel
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
-                CommunicationDatas.Add(new CommunicationData(data, SelectedShowType, TransferDirection.Response));
-                RsponseLength += data.Length;
+                ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Response));
+                ReceiveViewModel.RsponseLength += data.Length;
             });
         }
 
@@ -285,8 +271,8 @@ namespace CommunicationTool.ViewModel
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
-                CommunicationDatas.Add(new CommunicationData(data, SelectedShowType, TransferDirection.Request));
-                RequestLength += data.Length;
+                ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
+                ReceiveViewModel.RequestLength += data.Length;
             });
         }
 
