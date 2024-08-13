@@ -7,8 +7,6 @@ using Parser;
 using Parser.Interfaces;
 using Parser.Parsers;
 using System.IO.Ports;
-using System.Text;
-using System.Windows;
 using TopPortLib;
 using TopPortLib.Interfaces;
 using Utils;
@@ -32,11 +30,8 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private IEnumerable<Parity> _parity;
         [ObservableProperty]
-        private IEnumerable<DataType> _sendTypes;
-        [ObservableProperty]
         private string? _status = "未连接";
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(SendCommand))]
         private bool _isConnect;
         [ObservableProperty]
         private bool _isOpen;
@@ -48,21 +43,11 @@ namespace CommunicationTool.ViewModel
         private ParserConfig _parserConfig;
         [ObservableProperty]
         private string? _Title;
-        [ObservableProperty]
-        private DataType _SelectedSendType = DataType.HEX;
-        [ObservableProperty]
-        private bool _CR;
-        [ObservableProperty]
-        private bool _LF;
-        [ObservableProperty]
-        private CrcType _CrcType;
-        [ObservableProperty]
-        private IEnumerable<CrcType> _CrcTypes;
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(SendCommand))]
-        private string? _SendData;
+
         [ObservableProperty]
         private ReceiveViewModel _receiveViewModel = new();
+        [ObservableProperty]
+        private SendViewModel _sendViewModel = new();
 
         private readonly Connection _config;
 #pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
@@ -73,8 +58,6 @@ namespace CommunicationTool.ViewModel
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
-            SendTypes = Enum.GetValues<DataType>();
-            CrcTypes = Enum.GetValues<CrcType>();
             _config = config;
             Test = test;
             Title = test.TestName;
@@ -85,7 +68,11 @@ namespace CommunicationTool.ViewModel
             Status = SerialPortConnection.ToString();
         }
 
-
+        partial void OnIsConnectChanged(bool value)
+        {
+            SendViewModel.CommunicationPort = _SerialPort;
+            SendViewModel.IsConnect = value;
+        }
 
         partial void OnTitleChanged(string? value)
         {
@@ -274,67 +261,6 @@ namespace CommunicationTool.ViewModel
                 ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
                 ReceiveViewModel.RequestLength += data.Length;
             });
-        }
-
-        [RelayCommand(CanExecute = nameof(CanSend))]
-        private async Task SendAsync()
-        {
-            if (string.IsNullOrEmpty(SendData)) return;
-
-            byte[] cmd = SelectedSendType switch
-            {
-                DataType.ASCII => Encoding.ASCII.GetBytes(SendData),
-                DataType.UTF8 => Encoding.UTF8.GetBytes(SendData),
-                DataType.GB2312 => Encoding.GetEncoding("GB2312").GetBytes(SendData),
-                _ => HexStringToByte(SendData),
-            };
-            if (cmd.Length == 0) return;
-            cmd = CrcType switch
-            {
-                CrcType.Modbus => CRC.Crc16(cmd),
-                CrcType.Modbus_R => StringByteUtils.ComibeByteArray(cmd, CRC.CRC16_R(cmd)),
-                CrcType.GB => StringByteUtils.ComibeByteArray(cmd, CRC.GBcrc16(cmd, cmd.Length)),
-                CrcType.GB_string => StringByteUtils.ComibeByteArray(cmd, Encoding.GetEncoding("gb2312").GetBytes(StringByteUtils.BytesToString(CRC.GBcrc16(cmd, cmd.Length)).Replace(" ", ""))),
-                CrcType.GB_protocol => ProcessGBProtocol(cmd),
-                CrcType.HB => StringByteUtils.ComibeByteArray(cmd, CRC.HBcrc16(cmd, cmd.Length)),
-                CrcType.HB_string => StringByteUtils.ComibeByteArray(cmd, Encoding.GetEncoding("gb2312").GetBytes(StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", ""))),
-                CrcType.HB_protocol => ProcessHBProtocol(cmd),
-                CrcType.UCRC => StringByteUtils.ComibeByteArray(cmd, StringByteUtils.GetBytes(CRC.UpdateCRC(cmd, cmd.Length), true)),
-                _ => cmd,
-            };
-            if (CR) cmd = [.. cmd, 0x0d];
-            if (LF) cmd = [.. cmd, 0x0a];
-            if (IsConnect) await _SerialPort!.SendAsync(cmd);
-        }
-
-        private bool CanSend()
-        {
-            return IsConnect && !string.IsNullOrEmpty(SendData);
-        }
-
-        private static byte[] HexStringToByte(string SendData)
-        {
-            try
-            {
-                return StringByteUtils.StringToBytes(SendData);
-            }
-            catch
-            {
-                MessageBox.Show("请输入正确的Hex值");
-                return [];
-            }
-        }
-
-        private static byte[] ProcessGBProtocol(byte[] cmd)
-        {
-            var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
-            return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.GBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
-        }
-
-        private static byte[] ProcessHBProtocol(byte[] cmd)
-        {
-            var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
-            return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
         }
     }
 }
