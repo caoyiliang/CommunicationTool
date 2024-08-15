@@ -112,9 +112,14 @@ namespace CommunicationTool.ViewModel
         [RelayCommand]
         private async Task CloseAsync()
         {
-            if (_SerialPort != null) await _SerialPort.CloseAsync();
+            if (_SerialPort != null)
+            {
+                await _SerialPort.CloseAsync().ConfigureAwait(false);
+                _SerialPort.Dispose();
+                _SerialPort = null;
+            }
             _config.SerialPortTests.Remove(Test);
-            await _config.TrySaveChangeAsync();
+            await _config.TrySaveChangeAsync().ConfigureAwait(false);
         }
 
         [RelayCommand(CanExecute = nameof(CanOpen))]
@@ -218,11 +223,7 @@ namespace CommunicationTool.ViewModel
 
         private bool CanOpen()
         {
-            if (IsOpen && !IsConnect)
-            {
-                return false;
-            }
-            return true;
+            return !IsOpen || IsConnect;
         }
 
         private async Task SerialPort_OnDisconnect()
