@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xaml.Behaviors;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace CommunicationTool.Behaviors
 {

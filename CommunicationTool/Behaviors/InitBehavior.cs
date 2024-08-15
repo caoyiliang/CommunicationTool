@@ -1,5 +1,4 @@
-﻿using CommunicationTool.View;
-using CommunicationTool.ViewModel;
+﻿using CommunicationTool.ViewModel;
 using Config.Model;
 using Microsoft.Xaml.Behaviors;
 using System.Windows;
