@@ -7,6 +7,28 @@ namespace CommunicationTool.Control
 {
     public class CustomPopup : Popup
     {
+        public CustomPopup()
+        {
+            this.Loaded += CustomPopup_Loaded;
+        }
+
+        private void CustomPopup_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (this.PlacementTarget is Window window)
+            {
+                window.LocationChanged += Window_LocationChanged;
+            }
+        }
+
+        private void Window_LocationChanged(object? sender, EventArgs e)
+        {
+            if (IsOpen)
+            {
+                var mi = typeof(Popup).GetMethod("UpdatePosition", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                mi?.Invoke(this, null);
+            }
+        }
+
         protected override void OnOpened(EventArgs e)
         {
             base.OnOpened(e);

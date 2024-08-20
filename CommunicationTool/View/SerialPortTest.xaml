@@ -19,7 +19,7 @@
     </Window.Resources>
     <b:Interaction.Behaviors>
         <i:CloseBehavior Command="{Binding CloseCommand}"/>
-        <i:ClosePopupBehavior PopupVisible="{Binding HasPopupVisible}"/>
+        <!--<i:ClosePopupBehavior PopupVisible="{Binding HasPopupVisible}"/>-->
     </b:Interaction.Behaviors>
     <Grid>
         <Grid.RowDefinitions>
