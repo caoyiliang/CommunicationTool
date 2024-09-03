@@ -53,10 +53,6 @@ namespace CommunicationTool.ViewModel
 
         [ObservableProperty]
         private ObservableCollection<SendCmd> _sendCmds;
-        [ObservableProperty]
-        private IEnumerable<DataType> _sendTypes;
-        [ObservableProperty]
-        private IEnumerable<CrcType> _CrcTypes;
 
         private readonly Connection _config;
 #pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
@@ -64,8 +60,6 @@ namespace CommunicationTool.ViewModel
 #pragma warning restore CA1859 // 尽可能使用具体类型以提高性能
         public SerialPortViewModel(Connection config, SerialPortTest test)
         {
-            SendTypes = Enum.GetValues<DataType>();
-            CrcTypes = Enum.GetValues<CrcType>();
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
