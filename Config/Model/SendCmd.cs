@@ -23,27 +23,22 @@ namespace Config.Model
         [ObservableProperty]
         private CrcType _CrcType;
 
-        partial void OnDisplayCmdChanged(string? value)
+        partial void OnSendTypeChanged(DataType value)
         {
-            if (!string.IsNullOrEmpty(value))
+            if (!string.IsNullOrEmpty(DisplayCmd))
             {
                 Cmd = SendType switch
                 {
-                    DataType.ASCII => Encoding.ASCII.GetBytes(value),
-                    DataType.UTF8 => Encoding.UTF8.GetBytes(value),
-                    DataType.GB2312 => Encoding.GetEncoding("GB2312").GetBytes(value),
-                    _ => StringByteUtils.StringToBytes(value),
+                    DataType.ASCII => Encoding.ASCII.GetBytes(DisplayCmd),
+                    DataType.UTF8 => Encoding.UTF8.GetBytes(DisplayCmd),
+                    DataType.GB2312 => Encoding.GetEncoding("GB2312").GetBytes(DisplayCmd),
+                    _ => StringByteUtils.StringToBytes(DisplayCmd),
                 };
             }
             else
             {
                 Cmd = [];
             }
-        }
-
-        partial void OnSendTypeChanged(DataType value)
-        {
-            OnDisplayCmdChanged(DisplayCmd);
         }
     }
 }
