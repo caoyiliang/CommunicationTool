@@ -11,7 +11,7 @@ namespace Config.Model
         [ObservableProperty]
         private string? _Head;
         [ObservableProperty]
-        private DataType _DataType;
+        private LengthDataType _DataType;
         [ObservableProperty]
         private int _Length;
         [ObservableProperty]

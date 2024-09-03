@@ -1,5 +1,6 @@
 ﻿using CommunicationTool.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Config;
 using System.Collections.ObjectModel;
 
 namespace CommunicationTool.ViewModel

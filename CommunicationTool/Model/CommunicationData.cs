@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Config;
 using System.Text;
 
 namespace CommunicationTool.Model

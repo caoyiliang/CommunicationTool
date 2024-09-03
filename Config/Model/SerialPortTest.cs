@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace Config.Model
 {
@@ -12,5 +13,7 @@ namespace Config.Model
         private SerialPortConnection _SerialPortConnection = new();
         [ObservableProperty]
         private ParserConfig _ParserConfig = new();
+        [ObservableProperty]
+        private ObservableCollection<SendCmd> _SendCmds = [];
     }
 }

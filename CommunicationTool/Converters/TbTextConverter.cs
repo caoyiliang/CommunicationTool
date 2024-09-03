@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using Config;
+using System.Globalization;
 using System.Windows.Data;
 
 namespace CommunicationTool.Converters
@@ -7,7 +8,7 @@ namespace CommunicationTool.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return (Config.DataType)value == Config.DataType.固定长度 ? "固定长度:" : "高字节在前:";
+            return (LengthDataType)value == LengthDataType.固定长度 ? "固定长度:" : "高字节在前:";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

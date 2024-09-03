@@ -8,7 +8,7 @@ public enum ParserType
     FootParser,
 }
 
-public enum DataType
+public enum LengthDataType
 {
     Int16,
     UInt16,
@@ -16,4 +16,26 @@ public enum DataType
     Float,
     Double,
     固定长度
+}
+
+public enum DataType
+{
+    HEX,
+    ASCII,
+    UTF8,
+    GB2312
+}
+
+public enum CrcType
+{
+    None,
+    Modbus,
+    Modbus_R,
+    GB,
+    GB_string,
+    GB_protocol,
+    HB,
+    HB_string,
+    HB_protocol,
+    UCRC
 }

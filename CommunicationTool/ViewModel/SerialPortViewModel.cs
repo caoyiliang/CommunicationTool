@@ -6,6 +6,8 @@ using Config.Model;
 using Parser;
 using Parser.Interfaces;
 using Parser.Parsers;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO.Ports;
 using TopPortLib;
 using TopPortLib.Interfaces;
@@ -49,12 +51,21 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private SendViewModel _sendViewModel = new();
 
+        [ObservableProperty]
+        private ObservableCollection<SendCmd> _sendCmds;
+        [ObservableProperty]
+        private IEnumerable<DataType> _sendTypes;
+        [ObservableProperty]
+        private IEnumerable<CrcType> _CrcTypes;
+
         private readonly Connection _config;
 #pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
         private ITopPort? _SerialPort;
 #pragma warning restore CA1859 // 尽可能使用具体类型以提高性能
         public SerialPortViewModel(Connection config, SerialPortTest test)
         {
+            SendTypes = Enum.GetValues<DataType>();
+            CrcTypes = Enum.GetValues<CrcType>();
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
@@ -65,7 +76,35 @@ namespace CommunicationTool.ViewModel
             SerialPortConnection.PropertyChanged += SerialPortConnection_PropertyChanged; ;
             ParserConfig = test.ParserConfig;
             ParserConfig.PropertyChanged += ParserConfig_PropertyChanged;
+            SendCmds = test.SendCmds;
+            SendCmds.CollectionChanged += SendCmds_CollectionChanged;
+            foreach (var item in SendCmds)
+            {
+                item.PropertyChanged += SendCmd_PropertyChanged;
+            }
             Status = SerialPortConnection.ToString();
+        }
+
+        private async void SendCmds_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                if (e.NewItems != null)
+                    foreach (SendCmd item in e.NewItems)
+                    {
+                        item.PropertyChanged += SendCmd_PropertyChanged;
+                        item.Id = Guid.NewGuid();
+                    }
+            }
+            else
+            {
+                await _config.TrySaveChangeAsync();
+            }
+        }
+
+        private async void SendCmd_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            await _config.TrySaveChangeAsync();
         }
 
         partial void OnIsConnectChanged(bool value)
@@ -192,23 +231,23 @@ namespace CommunicationTool.ViewModel
             int Length = 0;
             switch (ParserConfig.DataType)
             {
-                case Config.DataType.Float:
+                case Config.LengthDataType.Float:
                     if (data.Length < headLenth + 4) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = (int)StringByteUtils.ToSingle(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case Config.DataType.Int16:
+                case Config.LengthDataType.Int16:
                     if (data.Length < headLenth + 2) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = StringByteUtils.ToInt16(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case Config.DataType.UInt16:
+                case Config.LengthDataType.UInt16:
                     if (data.Length < headLenth + 2) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = StringByteUtils.ToUInt16(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case Config.DataType.Int32:
+                case Config.LengthDataType.Int32:
                     if (data.Length < headLenth + 4) return new GetDataLengthRsp() { StateCode = Parser.StateCode.LengthNotEnough };
                     Length = StringByteUtils.ToInt32(data, headLenth, ParserConfig.IsHighByteBefore);
                     break;
-                case Config.DataType.固定长度:
+                case Config.LengthDataType.固定长度:
                     Length = ParserConfig.Length;
                     break;
                 default:

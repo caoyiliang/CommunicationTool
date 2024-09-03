@@ -16,9 +16,9 @@
                 <x:Type TypeName="config:ParserType" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
-        <ObjectDataProvider MethodName="GetValues" ObjectType="{x:Type config:DataType}" x:Key="DataTypes">
+        <ObjectDataProvider MethodName="GetValues" ObjectType="{x:Type config:LengthDataType}" x:Key="DataTypes">
             <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="config:DataType" />
+                <x:Type TypeName="config:LengthDataType" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
         <convert:TimeParserSetShowConverter x:Key="TimeParserSetShowConverter"/>

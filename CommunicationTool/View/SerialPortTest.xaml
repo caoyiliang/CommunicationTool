@@ -115,11 +115,52 @@
                     <Button Content="{Binding HasPopupVisible,Converter={StaticResource PopupStatusConverter}}" Command="{Binding HasPopupCommand}"/>
                     <ctrl:CustomPopup IsOpen="{Binding HasPopupVisible}" StaysOpen="True" Placement="Right" PlacementTarget="{Binding ElementName=window}" AllowsTransparency="True" >
                         <Border Background="#66FFFFFF" CornerRadius="8" Width="500" Height="{Binding ActualHeight, ElementName=window, Mode=OneWay}">
-                            <Border Background="#66FFFF00" CornerRadius="8">
-                                <Grid>
-
-                                </Grid>
-                            </Border>
+                            <DataGrid ItemsSource="{Binding SendCmds}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True">
+                                <DataGrid.Background>
+                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                        <GradientStop Color="#6654FF00"/>
+                                        <GradientStop Color="#66FF0000" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </DataGrid.Background>
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn/>
+                                    <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="3*"/>
+                                    <DataGridComboBoxColumn Header="类型" SelectedItemBinding="{Binding SendType}" Width="2*">
+                                        <DataGridComboBoxColumn.ElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.SendTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            </Style>
+                                        </DataGridComboBoxColumn.ElementStyle>
+                                        <DataGridComboBoxColumn.EditingElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.SendTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            </Style>
+                                        </DataGridComboBoxColumn.EditingElementStyle>
+                                    </DataGridComboBoxColumn>
+                                    <DataGridTextColumn Header="发送命令" Binding="{Binding DisplayCmd}" Width="4*"/>
+                                    <DataGridCheckBoxColumn Header="回车" Binding="{Binding CR}" Width="*"/>
+                                    <DataGridCheckBoxColumn Header="换行" Binding="{Binding LF}"  Width="*"/>
+                                    <DataGridComboBoxColumn Header="校验" SelectedItemBinding="{Binding CrcType}" Width="2*">
+                                        <DataGridComboBoxColumn.ElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.CrcTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            </Style>
+                                        </DataGridComboBoxColumn.ElementStyle>
+                                        <DataGridComboBoxColumn.EditingElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.CrcTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            </Style>
+                                        </DataGridComboBoxColumn.EditingElementStyle>
+                                    </DataGridComboBoxColumn>
+                                    <DataGridTemplateColumn Header="操作" Width="auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="发送"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </Border>
                     </ctrl:CustomPopup>
                 </Grid>

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:l="clr-namespace:CommunicationTool"
+             xmlns:config="clr-namespace:Config;assembly=Config"
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:i="clr-namespace:CommunicationTool.Behaviors"
              xmlns:converter="clr-namespace:CommunicationTool.Converters"
@@ -34,10 +34,10 @@
                 </Style>
             </StackPanel.Resources>
             <CheckBox Content="自动存储" IsChecked="True"/>
-            <RadioButton Content="HEX" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.HEX}}"/>
-            <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.ASCII}}"/>
-            <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.UTF8}}"/>
-            <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static l:DataType.GB2312}}"/>
+            <RadioButton Content="HEX" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.HEX}}"/>
+            <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.ASCII}}"/>
+            <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.UTF8}}"/>
+            <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.GB2312}}"/>
             <CheckBox Content="显示接收时间" IsChecked="True"/>
             <CheckBox Content="显示发送" IsChecked="True"/>
         </StackPanel>
