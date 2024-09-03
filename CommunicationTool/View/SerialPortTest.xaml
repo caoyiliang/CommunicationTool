@@ -147,7 +147,7 @@
                                     <DataGridTemplateColumn Header="操作" Width="auto">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Button Content="发送"/>
+                                                <Button Content="发送" Command="{Binding DataContext.SendDataCommand,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding DataContext,RelativeSource={RelativeSource Mode=TemplatedParent}}"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
