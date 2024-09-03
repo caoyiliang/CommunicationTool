@@ -300,8 +300,9 @@ namespace CommunicationTool.ViewModel
         }
 
         [RelayCommand(CanExecute = nameof(CanSend))]
-        private async Task SendDataAsync(SendCmd sendCmd)
+        private async Task SendDataAsync(object send)
         {
+            if (send is not SendCmd sendCmd) return;
             var cmd = sendCmd.Cmd;
             if (cmd.Length == 0) return;
 
