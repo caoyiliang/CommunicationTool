@@ -100,6 +100,35 @@ namespace CommunicationTool.ViewModel
 
         private async void SendCmd_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (sender is SendCmd sendCmd)
+            {
+                if (e.PropertyName == nameof(SendCmd.DisplayCmd) || e.PropertyName == nameof(SendCmd.SendType))
+                {
+                    var value = sendCmd.DisplayCmd;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        try
+                        {
+                            sendCmd.Cmd = sendCmd.SendType switch
+                            {
+                                DataType.ASCII => Encoding.ASCII.GetBytes(value),
+                                DataType.UTF8 => Encoding.UTF8.GetBytes(value),
+                                DataType.GB2312 => Encoding.GetEncoding("GB2312").GetBytes(value),
+                                _ => StringByteUtils.StringToBytes(value),
+                            };
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("数据错误，请检查选择类型！");
+                        }
+                    }
+                    else
+                    {
+                        sendCmd.Cmd = [];
+                    }
+                }
+            }
+
             await _config.TrySaveChangeAsync();
         }
 

@@ -138,12 +138,12 @@
                                 </DataGrid.Background>
                                 <DataGrid.Columns>
                                     <DataGridCheckBoxColumn/>
-                                    <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="3*"/>
-                                    <DataGridComboBoxColumn Header="类型" SelectedItemBinding="{Binding SendType}" ItemsSource="{Binding Source={StaticResource SendTypeEnum}}" Width="2*"/>
-                                    <DataGridTextColumn Header="发送命令" Binding="{Binding DisplayCmd}" Width="4*"/>
-                                    <DataGridCheckBoxColumn Header="回车" Binding="{Binding CR}" Width="*"/>
-                                    <DataGridCheckBoxColumn Header="换行" Binding="{Binding LF}"  Width="*"/>
-                                    <DataGridComboBoxColumn Header="校验" SelectedItemBinding="{Binding CrcType}" ItemsSource="{Binding Source={StaticResource CrcTypeEnum}}" Width="2*"/>
+                                    <DataGridTextColumn Header="名称" Binding="{Binding Name,UpdateSourceTrigger=PropertyChanged}" Width="3*"/>
+                                    <DataGridComboBoxColumn Header="类型" SelectedItemBinding="{Binding SendType,UpdateSourceTrigger=PropertyChanged}" ItemsSource="{Binding Source={StaticResource SendTypeEnum}}" Width="2*"/>
+                                    <DataGridTextColumn Header="发送命令" Binding="{Binding DisplayCmd,UpdateSourceTrigger=PropertyChanged}" Width="4*"/>
+                                    <DataGridCheckBoxColumn Header="回车" Binding="{Binding CR,UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                                    <DataGridCheckBoxColumn Header="换行" Binding="{Binding LF,UpdateSourceTrigger=PropertyChanged}"  Width="*"/>
+                                    <DataGridComboBoxColumn Header="校验" SelectedItemBinding="{Binding CrcType,UpdateSourceTrigger=PropertyChanged}" ItemsSource="{Binding Source={StaticResource CrcTypeEnum}}" Width="2*"/>
                                     <DataGridTemplateColumn Header="操作" Width="auto">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>

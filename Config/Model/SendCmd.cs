@@ -22,23 +22,5 @@ namespace Config.Model
         private bool _LF;
         [ObservableProperty]
         private CrcType _CrcType;
-
-        partial void OnSendTypeChanged(DataType value)
-        {
-            if (!string.IsNullOrEmpty(DisplayCmd))
-            {
-                Cmd = SendType switch
-                {
-                    DataType.ASCII => Encoding.ASCII.GetBytes(DisplayCmd),
-                    DataType.UTF8 => Encoding.UTF8.GetBytes(DisplayCmd),
-                    DataType.GB2312 => Encoding.GetEncoding("GB2312").GetBytes(DisplayCmd),
-                    _ => StringByteUtils.StringToBytes(DisplayCmd),
-                };
-            }
-            else
-            {
-                Cmd = [];
-            }
-        }
     }
 }
