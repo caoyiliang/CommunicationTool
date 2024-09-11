@@ -36,6 +36,7 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private string? _status = "未连接";
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SendDataCommand))]
         private bool _isConnect;
         [ObservableProperty]
         private bool _isOpen;
