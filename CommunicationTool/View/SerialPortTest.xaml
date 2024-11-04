@@ -11,6 +11,7 @@
         xmlns:converter="clr-namespace:CommunicationTool.Converters"
         xmlns:ctrl="clr-namespace:CommunicationTool.Control"
         xmlns:viewmodel="clr-namespace:CommunicationTool.ViewModel" 
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         d:DataContext="{d:DesignInstance Type=viewmodel:SerialPortViewModel}"
         Style="{StaticResource TestWindow}"
         mc:Ignorable="d"
@@ -18,6 +19,7 @@
     <Window.Resources>
         <converter:SerialPortConnectStatusConverter x:Key="SerialPortConnectStatusConverter"/>
         <converter:PopupStatusConverter x:Key="PopupStatusConverter"/>
+        <converter:EqualityMultiConverter x:Key="EqualityMultiConverter"/>
     </Window.Resources>
     <b:Interaction.Behaviors>
         <i:CloseBehavior Command="{Binding CloseCommand}"/>
@@ -141,6 +143,21 @@
                                             </ObjectDataProvider.MethodParameters>
                                         </ObjectDataProvider>
                                     </DataGrid.Resources>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource EqualityMultiConverter}">
+                                                            <Binding Path="Id" />
+                                                            <Binding Path="DataContext.CurrentSendId" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="Background" Value="LightBlue"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
                                     <DataGrid.Background>
                                         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                                             <GradientStop Color="#6654FF00"/>
@@ -148,7 +165,7 @@
                                         </LinearGradientBrush>
                                     </DataGrid.Background>
                                     <DataGrid.Columns>
-                                        <DataGridCheckBoxColumn/>
+                                        <DataGridCheckBoxColumn Binding="{Binding IsSelected,UpdateSourceTrigger=PropertyChanged}" />
                                         <DataGridTextColumn Header="名称" Binding="{Binding Name,UpdateSourceTrigger=PropertyChanged}" Width="3*"/>
                                         <DataGridComboBoxColumn Header="类型" SelectedItemBinding="{Binding SendType,UpdateSourceTrigger=PropertyChanged}" ItemsSource="{Binding Source={StaticResource SendTypeEnum}}" Width="2*"/>
                                         <DataGridTextColumn Header="发送命令" Binding="{Binding DisplayCmd,UpdateSourceTrigger=LostFocus}" Width="4*"/>
@@ -165,9 +182,9 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="2">
-                                    <TextBlock Text="间隔:"/>
-                                    <TextBox Text="{Binding SendInterval,UpdateSourceTrigger=LostFocus}" Width="50"/>
-                                    <Button Style="{x:Null}" Content="循环发送列表勾选" Command="{Binding SendCmdsCommand}"/>
+                                    <CheckBox Content="循环发送列表勾选，间隔:" IsChecked="{Binding IsAutoSend}" VerticalContentAlignment="Center"/>
+                                    <TextBox Text="{Binding SendInterval,UpdateSourceTrigger=LostFocus}" VerticalContentAlignment="Center" Width="50" Margin="5,0"/>
+                                    <TextBlock Text="ms" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

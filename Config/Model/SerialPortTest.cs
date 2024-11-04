@@ -15,5 +15,9 @@ namespace Config.Model
         private ParserConfig _ParserConfig = new();
         [ObservableProperty]
         private ObservableCollection<SendCmd> _SendCmds = [];
+        [ObservableProperty]
+        private bool _IsAutoSend;
+        [ObservableProperty]
+        private int _SendInterval = 1000;
     }
 }

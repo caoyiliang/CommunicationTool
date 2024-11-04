@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="CSoft.DataPairs.Ceras" Version="8.0.4" />
     <PackageReference Include="CSoft.Utils" Version="8.0.9" />
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />

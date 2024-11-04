@@ -7,6 +7,8 @@ namespace Config.Model
     public partial class SendCmd : ObservableObject
     {
         [ObservableProperty]
+        private bool _IsSelected;
+        [ObservableProperty]
         private Guid _Id;
         [ObservableProperty]
         private string? _Name;

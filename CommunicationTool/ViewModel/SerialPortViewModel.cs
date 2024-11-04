@@ -56,9 +56,16 @@ namespace CommunicationTool.ViewModel
 
         [ObservableProperty]
         private ObservableCollection<SendCmd> _sendCmds;
+        [ObservableProperty]
+        private bool _isAutoSend;
+        [ObservableProperty]
+        private int _sendInterval;
+        [ObservableProperty]
+        private Guid _currentSendId = Guid.Empty;
 
         private readonly Connection _config;
-#pragma warning disable CA1859 // 尽可能使用具体类型以提高性能W
+        private CancellationTokenSource? _cts;
+#pragma warning disable CA1859 // 尽可能使用具体类型以提高性能
         private ITopPort? _SerialPort;
 #pragma warning restore CA1859 // 尽可能使用具体类型以提高性能
         public SerialPortViewModel(Connection config, SerialPortTest test)
@@ -73,6 +80,8 @@ namespace CommunicationTool.ViewModel
             SerialPortConnection.PropertyChanged += SerialPortConnection_PropertyChanged; ;
             ParserConfig = test.ParserConfig;
             ParserConfig.PropertyChanged += ParserConfig_PropertyChanged;
+            IsAutoSend = test.IsAutoSend;
+            SendInterval = test.SendInterval;
             SendCmds = test.SendCmds;
             SendCmds.CollectionChanged += SendCmds_CollectionChanged;
             foreach (var item in SendCmds)
@@ -131,6 +140,44 @@ namespace CommunicationTool.ViewModel
             }
 
             await _config.TrySaveChangeAsync();
+        }
+
+        partial void OnIsAutoSendChanged(bool value)
+        {
+            Test.IsAutoSend = value;
+            _ = Task.Run(async () => await _config.TrySaveChangeAsync());
+            if (value)
+            {
+                _cts = new();
+                try
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        while (!_cts.IsCancellationRequested)
+                        {
+                            foreach (var item in SendCmds)
+                            {
+                                if (item.IsSelected)
+                                {
+                                    CurrentSendId = item.Id; // 设置当前发送行的 Id
+                                    await SendDataAsync(item);
+                                    try
+                                    {
+                                        await Task.Delay(SendInterval, _cts.Token);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            CurrentSendId = Guid.Empty; // 发送完成后重置 Id
+                        }
+                    }, _cts.Token);
+                }
+                catch { }
+            }
+            else
+            {
+                _cts?.Cancel();
+            }
         }
 
         partial void OnIsConnectChanged(bool value)
