@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace CommunicationTool.Behaviors
 {
-    public class ScrollViewerBehavior : Behavior<ScrollViewer>
+    internal class ScrollViewerBehavior : Behavior<ScrollViewer>
     {
         public bool AutoScroll
         {

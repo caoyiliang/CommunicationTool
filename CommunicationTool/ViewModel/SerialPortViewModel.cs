@@ -360,20 +360,28 @@ namespace CommunicationTool.ViewModel
 
         private async Task SerialPort_OnReceiveParsedData(byte[] data)
         {
-            await App.Current.Dispatcher.InvokeAsync(() =>
+            try
             {
-                ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Response));
-                ReceiveViewModel.RsponseLength += data.Length;
-            });
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Response));
+                    ReceiveViewModel.RsponseLength += data.Length;
+                });
+            }
+            catch { }
         }
 
         private async Task SerialPort_OnSentData(byte[] data)
         {
-            await App.Current.Dispatcher.InvokeAsync(() =>
+            try
             {
-                ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
-                ReceiveViewModel.RequestLength += data.Length;
-            });
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
+                    ReceiveViewModel.RequestLength += data.Length;
+                });
+            }
+            catch { }
         }
 
         [RelayCommand(CanExecute = nameof(CanSend))]
