@@ -65,9 +65,8 @@ namespace CommunicationTool.ViewModel
 
         private readonly Connection _config;
         private CancellationTokenSource? _cts;
-#pragma warning disable CA1859 // 尽可能使用具体类型以提高性能
         private ITopPort? _SerialPort;
-#pragma warning restore CA1859 // 尽可能使用具体类型以提高性能
+
         public SerialPortViewModel(Connection config, SerialPortTest test)
         {
             PortNames = SerialPort.GetPortNames();

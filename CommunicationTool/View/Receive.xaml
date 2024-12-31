@@ -78,11 +78,19 @@
             </DockPanel.Resources>
             <StackPanel Orientation="Horizontal" Margin="10,3">
                 <TextBlock Text="接收字节数:"/>
-                <TextBlock Text="{Binding RsponseLength}" TextDecorations="Underline" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding RsponseLength}" TextDecorations="Underline" TextWrapping="Wrap">
+                    <TextBlock.InputBindings>
+                        <MouseBinding Gesture="LeftClick" Command="{Binding ClearRsponseLengthCommand}" />
+                    </TextBlock.InputBindings>
+                </TextBlock>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="50,0">
                 <TextBlock Text="发送字节数:"/>
-                <TextBlock Text="{Binding RequestLength}" TextDecorations="Underline" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding RequestLength}" TextDecorations="Underline" TextWrapping="Wrap">
+                    <TextBlock.InputBindings>
+                        <MouseBinding Gesture="LeftClick" Command="{Binding ClearRequestLengthCommand}" />
+                    </TextBlock.InputBindings>
+                </TextBlock>
             </StackPanel>
             <CheckBox IsChecked="{Binding AutoScroll}" Content="自动滚动" Margin="10,0" HorizontalAlignment="Right" VerticalAlignment="Center" DockPanel.Dock="Right"/>
         </DockPanel>

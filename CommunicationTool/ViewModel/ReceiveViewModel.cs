@@ -1,5 +1,6 @@
 ﻿using CommunicationTool.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Config;
 using System.Collections.ObjectModel;
 
@@ -24,6 +25,18 @@ namespace CommunicationTool.ViewModel
             {
                 item.ShowType = value;
             }
+        }
+
+        [RelayCommand]
+        private void ClearRsponseLength()
+        {
+            RsponseLength = 0;
+        }
+
+        [RelayCommand]
+        private void ClearRequestLength()
+        {
+            RequestLength = 0;
         }
     }
 }
