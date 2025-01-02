@@ -7,7 +7,7 @@ namespace Config.Model
 {
     public partial class Connection : ObservableObject
     {
-        public ObservableCollection<SerialPortTest> SerialPortTests { get; set; } = [];
+        public ObservableCollection<TestConfig> TestConfigs { get; set; } = [];
 
         private static readonly IDataPair<Connection> _pair = new DataPair<Connection>(nameof(Connection), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PairsDB.dll"));
 

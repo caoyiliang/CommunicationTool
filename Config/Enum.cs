@@ -1,5 +1,15 @@
 ﻿namespace Config;
 
+public enum TestType
+{
+    SerialPort,
+    TcpClient,
+    TcpServer,
+    UdpClient,
+    ClassicBluetoothClient,
+    ClassicBluetoothServer
+}
+
 public enum ParserType
 {
     TimeParser,

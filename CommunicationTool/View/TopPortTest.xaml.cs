@@ -3,11 +3,11 @@
 namespace CommunicationTool.View
 {
     /// <summary>
-    /// SerialPortTest.xaml 的交互逻辑
+    /// TopPortTest.xaml 的交互逻辑
     /// </summary>
-    public partial class SerialPortTest : Window
+    public partial class TopPortTest : Window
     {
-        public SerialPortTest()
+        public TopPortTest()
         {
             InitializeComponent();
         }

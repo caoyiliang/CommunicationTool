@@ -1,4 +1,5 @@
 ﻿using CommunicationTool.ViewModel;
+using Config;
 using Config.Model;
 using Microsoft.Xaml.Behaviors;
 using System.Windows;
@@ -39,9 +40,9 @@ namespace CommunicationTool.Behaviors
             {
                 case TestType.SerialPort:
                     {
-                        var config = new Config.Model.SerialPortTest() { Id = Guid.NewGuid() };
-                        Connection.SerialPortTests.Add(config);
-                        var test = new View.SerialPortTest { DataContext = new SerialPortViewModel(Connection, config) };
+                        var config = new Config.Model.TestConfig(new SerialPortConnection()) { Id = Guid.NewGuid() };
+                        Connection.TestConfigs.Add(config);
+                        var test = new View.TopPortTest { DataContext = new TopPortViewModel(Connection, config) };
                         test.Show();
                     }
                     break;

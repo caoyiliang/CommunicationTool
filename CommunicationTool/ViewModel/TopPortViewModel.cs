@@ -1,7 +1,9 @@
-﻿using CommunicationTool.Model;
+﻿using Communication.Interfaces;
+using CommunicationTool.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Config;
+using Config.Interface;
 using Config.Model;
 using Parser;
 using Parser.Interfaces;
@@ -17,7 +19,7 @@ using Utils;
 
 namespace CommunicationTool.ViewModel
 {
-    public partial class SerialPortViewModel : ObservableObject
+    public partial class TopPortViewModel : ObservableObject
     {
         [ObservableProperty]
         private bool _isPopupVisible;
@@ -41,9 +43,9 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private bool _isOpen;
         [ObservableProperty]
-        private SerialPortTest _test;
+        private TestConfig _test;
         [ObservableProperty]
-        private SerialPortConnection _serialPortConnection;
+        private IPhysicalPortConfig _physicalPortConnection;
         [ObservableProperty]
         private ParserConfig _parserConfig;
         [ObservableProperty]
@@ -65,9 +67,9 @@ namespace CommunicationTool.ViewModel
 
         private readonly Connection _config;
         private CancellationTokenSource? _cts;
-        private ITopPort? _SerialPort;
+        private ITopPort? _TopPort;
 
-        public SerialPortViewModel(Connection config, SerialPortTest test)
+        public TopPortViewModel(Connection config, TestConfig test)
         {
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
@@ -75,8 +77,8 @@ namespace CommunicationTool.ViewModel
             _config = config;
             Test = test;
             Title = test.TestName;
-            SerialPortConnection = test.SerialPortConnection;
-            SerialPortConnection.PropertyChanged += SerialPortConnection_PropertyChanged; ;
+            PhysicalPortConnection = test.PhysicalPortConnection;
+            PhysicalPortConnection.PropertyChanged += PhysicalPortConnection_PropertyChanged;
             ParserConfig = test.ParserConfig;
             ParserConfig.PropertyChanged += ParserConfig_PropertyChanged;
             IsAutoSend = test.IsAutoSend;
@@ -87,7 +89,7 @@ namespace CommunicationTool.ViewModel
             {
                 item.PropertyChanged += SendCmd_PropertyChanged;
             }
-            Status = SerialPortConnection.ToString();
+            Status = PhysicalPortConnection.ToString();
         }
 
         private async void SendCmds_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -158,7 +160,7 @@ namespace CommunicationTool.ViewModel
                             {
                                 if (item.IsSelected)
                                 {
-                                    CurrentSendId = item.Id; // 设置当前发送行的 Id
+                                    if (CurrentSendId != item.Id) CurrentSendId = item.Id; // 设置当前发送行的 Id
                                     await SendDataAsync(item);
                                     try
                                     {
@@ -181,7 +183,7 @@ namespace CommunicationTool.ViewModel
 
         partial void OnIsConnectChanged(bool value)
         {
-            SendViewModel.CommunicationPort = _SerialPort;
+            SendViewModel.CommunicationPort = _TopPort;
             SendViewModel.IsConnect = value;
         }
 
@@ -191,10 +193,10 @@ namespace CommunicationTool.ViewModel
             _ = Task.Run(async () => await _config.TrySaveChangeAsync());
         }
 
-        private async void SerialPortConnection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private async void PhysicalPortConnection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             await _config.TrySaveChangeAsync();
-            Status = SerialPortConnection.ToString();
+            Status = PhysicalPortConnection.ToString();
         }
 
         private async void ParserConfig_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -223,13 +225,13 @@ namespace CommunicationTool.ViewModel
         [RelayCommand]
         private async Task CloseAsync()
         {
-            if (_SerialPort != null)
+            if (_TopPort != null)
             {
-                await _SerialPort.CloseAsync().ConfigureAwait(false);
-                _SerialPort.Dispose();
-                _SerialPort = null;
+                await _TopPort.CloseAsync().ConfigureAwait(false);
+                _TopPort.Dispose();
+                _TopPort = null;
             }
-            _config.SerialPortTests.Remove(Test);
+            _config.TestConfigs.Remove(Test);
             await _config.TrySaveChangeAsync().ConfigureAwait(false);
         }
 
@@ -238,25 +240,45 @@ namespace CommunicationTool.ViewModel
         {
             if (IsConnect)
             {
-                await _SerialPort!.CloseAsync();
+                await _TopPort!.CloseAsync();
                 IsOpen = false;
             }
             else
             {
-                var serialPort = new Communication.Bus.PhysicalPort.SerialPort(SerialPortConnection.PortName, SerialPortConnection.BaudRate, SerialPortConnection.Parity, SerialPortConnection.DataBits, SerialPortConnection.StopBits)
+                IPhysicalPort physicalPort = null;
+                switch (PhysicalPortConnection.Type)
                 {
-                    DtrEnable = SerialPortConnection.DTR,
-                    RtsEnable = SerialPortConnection.RTS
-                };
-                _SerialPort = new TopPort(serialPort, NewParser());
+                    case TestType.SerialPort:
+                        var Connection = (SerialPortConnection)PhysicalPortConnection;
+                        physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
+                        {
+                            DtrEnable = Connection.DTR,
+                            RtsEnable = Connection.RTS
+                        };
+                        break;
+                    case TestType.TcpClient:
+                        break;
+                    case TestType.TcpServer:
+                        break;
+                    case TestType.UdpClient:
+                        break;
+                    case TestType.ClassicBluetoothClient:
+                        break;
+                    case TestType.ClassicBluetoothServer:
+                        break;
+                    default:
+                        break;
+                }
 
-                _SerialPort.OnSentData += SerialPort_OnSentData;
-                _SerialPort.OnReceiveParsedData += SerialPort_OnReceiveParsedData;
-                _SerialPort.OnConnect += SerialPort_OnConnect;
-                _SerialPort.OnDisconnect += SerialPort_OnDisconnect;
+                _TopPort = new TopPort(physicalPort, NewParser());
+
+                _TopPort.OnSentData += SerialPort_OnSentData;
+                _TopPort.OnReceiveParsedData += SerialPort_OnReceiveParsedData;
+                _TopPort.OnConnect += SerialPort_OnConnect;
+                _TopPort.OnDisconnect += SerialPort_OnDisconnect;
                 try
                 {
-                    await _SerialPort.OpenAsync();
+                    await _TopPort.OpenAsync();
                     IsOpen = true;
                 }
                 catch
@@ -372,15 +394,19 @@ namespace CommunicationTool.ViewModel
 
         private async Task SerialPort_OnSentData(byte[] data)
         {
-            try
+            _ = Task.Run(async () =>
             {
-                await App.Current.Dispatcher.InvokeAsync(() =>
+                try
                 {
-                    ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
-                    ReceiveViewModel.RequestLength += data.Length;
-                });
-            }
-            catch { }
+                    await App.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
+                        ReceiveViewModel.RequestLength += data.Length;
+                    });
+                }
+                catch { }
+            });
+            await Task.CompletedTask;
         }
 
         [RelayCommand(CanExecute = nameof(CanSend))]
@@ -405,7 +431,7 @@ namespace CommunicationTool.ViewModel
             };
             if (sendCmd.CR) cmd = [.. cmd, 0x0d];
             if (sendCmd.LF) cmd = [.. cmd, 0x0a];
-            if (IsConnect) await _SerialPort!.SendAsync(cmd);
+            if (IsConnect) await _TopPort!.SendAsync(cmd);
         }
 
         private bool CanSend()

@@ -1,9 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Config.Interface;
 using System.IO.Ports;
 
 namespace Config.Model
 {
-    public partial class SerialPortConnection : ObservableObject
+    public partial class SerialPortConnection : ObservableObject, IPhysicalPortConfig
     {
         [ObservableProperty]
         private string _PortName = "COM1";
@@ -20,9 +21,13 @@ namespace Config.Model
         [ObservableProperty]
         private bool _RTS = false;
 
+        public string Info => $"{PortName}";
+
+        public TestType Type => TestType.SerialPort;
+
         public override string ToString()
         {
-            return $"当前[连接方式:SerialPort] [串口名:{PortName}][波特率:{BaudRate}][数据位:{DataBits}][停止位:{StopBits}][校验位:{Parity}][DTR:{DTR}][RTS:{RTS}]";
+            return $"当前[连接方式:{Type}] [串口名:{PortName}][波特率:{BaudRate}][数据位:{DataBits}][停止位:{StopBits}][校验位:{Parity}][DTR:{DTR}][RTS:{RTS}]";
         }
     }
 }

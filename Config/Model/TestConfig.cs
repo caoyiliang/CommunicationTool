@@ -1,16 +1,17 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Config.Interface;
 using System.Collections.ObjectModel;
 
 namespace Config.Model
 {
-    public partial class SerialPortTest : ObservableObject
+    public partial class TestConfig : ObservableObject
     {
         [ObservableProperty]
         private Guid _Id;
         [ObservableProperty]
-        private string? _TestName = nameof(SerialPortTest);
+        private string? _TestName;
         [ObservableProperty]
-        private SerialPortConnection _SerialPortConnection = new();
+        private IPhysicalPortConfig _PhysicalPortConnection = null!;
         [ObservableProperty]
         private ParserConfig _ParserConfig = new();
         [ObservableProperty]
@@ -19,5 +20,13 @@ namespace Config.Model
         private bool _IsAutoSend;
         [ObservableProperty]
         private int _SendInterval = 1000;
+
+        public TestConfig(IPhysicalPortConfig physicalPortConnection)
+        {
+            _TestName = $"{physicalPortConnection.Type}Test";
+            _PhysicalPortConnection = physicalPortConnection;
+        }
+
+        public TestConfig() { }
     }
 }
