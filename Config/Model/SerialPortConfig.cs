@@ -4,7 +4,7 @@ using System.IO.Ports;
 
 namespace Config.Model
 {
-    public partial class SerialPortConnection : ObservableObject, IPhysicalPortConfig
+    public partial class SerialPortConfig : ObservableObject, IPhysicalPortConfig
     {
         [ObservableProperty]
         private string _PortName = "COM1";

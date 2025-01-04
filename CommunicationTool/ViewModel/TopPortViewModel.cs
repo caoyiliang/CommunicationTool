@@ -193,13 +193,13 @@ namespace CommunicationTool.ViewModel
             _ = Task.Run(async () => await _config.TrySaveChangeAsync());
         }
 
-        private async void PhysicalPortConnection_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private async void PhysicalPortConnection_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             await _config.TrySaveChangeAsync();
             Status = PhysicalPortConnection.ToString();
         }
 
-        private async void ParserConfig_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private async void ParserConfig_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             await _config.TrySaveChangeAsync();
         }
@@ -249,14 +249,20 @@ namespace CommunicationTool.ViewModel
                 switch (PhysicalPortConnection.Type)
                 {
                     case TestType.SerialPort:
-                        var Connection = (SerialPortConnection)PhysicalPortConnection;
-                        physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
                         {
-                            DtrEnable = Connection.DTR,
-                            RtsEnable = Connection.RTS
-                        };
+                            var Connection = (SerialPortConfig)PhysicalPortConnection;
+                            physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
+                            {
+                                DtrEnable = Connection.DTR,
+                                RtsEnable = Connection.RTS
+                            };
+                        }
                         break;
                     case TestType.TcpClient:
+                        {
+                            var Connection = (TcpClientConfig)PhysicalPortConnection;
+                            physicalPort = new Communication.Bus.PhysicalPort.TcpClient(Connection.HostName, Connection.Port);
+                        }
                         break;
                     case TestType.TcpServer:
                         break;

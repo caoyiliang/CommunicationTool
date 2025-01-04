@@ -17,7 +17,7 @@
         mc:Ignorable="d"
         Title="SerialPortTest" Height="450" Width="800">
     <Window.Resources>
-        <converter:SerialPortConnectStatusConverter x:Key="SerialPortConnectStatusConverter"/>
+        <converter:ConnectStatusConverter x:Key="ConnectStatusConverter"/>
         <converter:PopupStatusConverter x:Key="PopupStatusConverter"/>
         <converter:EqualityMultiConverter x:Key="EqualityMultiConverter"/>
     </Window.Resources>
@@ -41,7 +41,14 @@
                     <ColumnDefinition Width="auto"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Button Content="{Binding IsOpen,Converter={StaticResource SerialPortConnectStatusConverter}}" Margin="10" Padding="10,5" Command="{Binding ConnectCommand}"/>
+                <Button Margin="10" Padding="10,5" Command="{Binding ConnectCommand}">
+                    <Button.Content>
+                        <MultiBinding Converter="{StaticResource ConnectStatusConverter}">
+                            <Binding Path="PhysicalPortConnection.Type"/>
+                            <Binding Path="IsOpen"/>
+                        </MultiBinding>
+                    </Button.Content>
+                </Button>
                 <local:Send Grid.Column="1" DataContext="{Binding SendViewModel}"/>
             </Grid>
         </Grid>
@@ -76,41 +83,82 @@
                                 <Setter Property="Foreground" Value="White"/>
                                 <Setter Property="Margin" Value="2"/>
                             </Style>
-                        </Popup.Resources>
-                        <Grid Width="165" Height="200" Background="#590000FF">
-                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                    <RowDefinition/>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="auto"/>
-                                    <ColumnDefinition/>
-                                </Grid.ColumnDefinitions>
-                                <Label Content="串口号"/>
-                                <ComboBox ItemsSource="{Binding PortNames}" SelectedItem="{Binding PhysicalPortConnection.PortName}" Grid.Column="1"/>
-                                <Label Content="波特率" Grid.Row="1"/>
-                                <ComboBox ItemsSource="{Binding BaudRates}" SelectedItem="{Binding PhysicalPortConnection.BaudRate}" Grid.Column="1" Grid.Row="1" IsEditable="True"/>
-                                <Label Content="数据位" Grid.Row="2"/>
-                                <ComboBox ItemsSource="{Binding DataBits}" SelectedItem="{Binding PhysicalPortConnection.DataBits}" Grid.Column="1" Grid.Row="2"/>
-                                <Label Content="停止位" Grid.Row="3"/>
-                                <ComboBox ItemsSource="{Binding StopBits}" SelectedItem="{Binding PhysicalPortConnection.StopBits}" Grid.Column="1" Grid.Row="3"/>
-                                <Label Content="校验位" Grid.Row="4"/>
-                                <ComboBox ItemsSource="{Binding Parity}" SelectedItem="{Binding PhysicalPortConnection.Parity}" Grid.Column="1" Grid.Row="4"/>
-                                <Grid Grid.Column="1" Grid.Row="5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition/>
-                                    </Grid.ColumnDefinitions>
-                                    <CheckBox Content="DTR" IsChecked="{Binding PhysicalPortConnection.DTR}"/>
-                                    <CheckBox Content="RTS" IsChecked="{Binding PhysicalPortConnection.RTS}" Grid.Column="1"/>
+                            <DataTemplate x:Key="SerialPortTemplate">
+                                <Grid Width="165" Height="200" Background="#590000FF">
+                                    <Grid HorizontalAlignment="Center" 
+                                          VerticalAlignment="Center" 
+                                          d:DataContext="{d:DesignInstance Type=viewmodel:TopPortViewModel}" 
+                                          DataContext="{Binding DataContext,RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="串口号"/>
+                                        <ComboBox ItemsSource="{Binding PortNames}" SelectedItem="{Binding PhysicalPortConnection.PortName}" Grid.Column="1"/>
+                                        <Label Content="波特率" Grid.Row="1"/>
+                                        <ComboBox ItemsSource="{Binding BaudRates}" SelectedItem="{Binding PhysicalPortConnection.BaudRate}" Grid.Column="1" Grid.Row="1" IsEditable="True"/>
+                                        <Label Content="数据位" Grid.Row="2"/>
+                                        <ComboBox ItemsSource="{Binding DataBits}" SelectedItem="{Binding PhysicalPortConnection.DataBits}" Grid.Column="1" Grid.Row="2"/>
+                                        <Label Content="停止位" Grid.Row="3"/>
+                                        <ComboBox ItemsSource="{Binding StopBits}" SelectedItem="{Binding PhysicalPortConnection.StopBits}" Grid.Column="1" Grid.Row="3"/>
+                                        <Label Content="校验位" Grid.Row="4"/>
+                                        <ComboBox ItemsSource="{Binding Parity}" SelectedItem="{Binding PhysicalPortConnection.Parity}" Grid.Column="1" Grid.Row="4"/>
+                                        <Grid Grid.Column="1" Grid.Row="5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition/>
+                                                <ColumnDefinition/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Content="DTR" IsChecked="{Binding PhysicalPortConnection.DTR}"/>
+                                            <CheckBox Content="RTS" IsChecked="{Binding PhysicalPortConnection.RTS}" Grid.Column="1"/>
+                                        </Grid>
+                                    </Grid>
                                 </Grid>
-                            </Grid>
-                        </Grid>
+                            </DataTemplate>
+                            <DataTemplate x:Key="TcpClientTemplate">
+                                <Grid Width="250" Height="100" Background="#590000FF">
+                                    <Grid HorizontalAlignment="Center" 
+                                          VerticalAlignment="Center" 
+                                          d:DataContext="{d:DesignInstance Type=viewmodel:TopPortViewModel}" 
+                                          DataContext="{Binding DataContext,RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="远程地址"/>
+                                        <TextBox Text="{Binding PhysicalPortConnection.HostName}" Grid.Column="1" Width="120"/>
+                                        <Label Content="远程端口" Grid.Row="1"/>
+                                        <TextBox Text="{Binding PhysicalPortConnection.Port}" Grid.Column="1" Grid.Row="1"/>
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
+                        </Popup.Resources>
+                        <ContentControl>
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Setter Property="ContentTemplate" Value="{StaticResource SerialPortTemplate}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.SerialPort}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource SerialPortTemplate}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.TcpClient}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource TcpClientTemplate}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ContentControl.Style>
+                        </ContentControl>
                     </Popup>
                 </Grid>
             </StatusBarItem>

@@ -40,13 +40,19 @@ namespace CommunicationTool.Behaviors
             {
                 case TestType.SerialPort:
                     {
-                        var config = new Config.Model.TestConfig(new SerialPortConnection()) { Id = Guid.NewGuid() };
+                        var config = new TestConfig(new SerialPortConfig()) { Id = Guid.NewGuid() };
                         Connection.TestConfigs.Add(config);
                         var test = new View.TopPortTest { DataContext = new TopPortViewModel(Connection, config) };
                         test.Show();
                     }
                     break;
                 case TestType.TcpClient:
+                    {
+                        var config = new TestConfig(new TcpClientConfig()) { Id = Guid.NewGuid() };
+                        Connection.TestConfigs.Add(config);
+                        var test = new View.TopPortTest { DataContext = new TopPortViewModel(Connection, config) };
+                        test.Show();
+                    }
                     break;
                 case TestType.TcpServer:
                     break;
