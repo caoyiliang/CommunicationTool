@@ -8,15 +8,12 @@ namespace CommunicationTool.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            switch ((TestType)values[0])
+            return (TestType)values[0] switch
             {
-                default:
-                    return (bool)values[1] ? "关闭连接" : "打开连接";
-                case TestType.SerialPort:
-                    return (bool)values[1] ? "关闭串口" : "打开串口";
-                case TestType.TcpServer:
-                    return (bool)values[1] ? "关闭监听" : "监听";
-            }
+                TestType.SerialPort => (bool)values[1] ? "关闭串口" : "打开串口",
+                TestType.TcpServer => (bool)values[1] ? "关闭监听" : "监听",
+                _ => (bool)values[1] ? "关闭连接" : "打开连接",
+            };
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
