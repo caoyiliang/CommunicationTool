@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Config;
 using System.Text;
 using System.Windows;
+using TopPortLib;
 using TopPortLib.Interfaces;
 using Utils;
 
@@ -29,7 +30,11 @@ namespace CommunicationTool.ViewModel
         [NotifyCanExecuteChangedFor(nameof(SendCommand))]
         private bool _isConnect;
         [ObservableProperty]
-        private ITopPort? _communicationPort;
+        private ITopPort? _TestTopPort;
+        [ObservableProperty]
+        private ITopPort_Server? _TestTopPort_Server;
+        [ObservableProperty]
+        private Guid _ClientId;
 
         public SendViewModel()
         {
@@ -65,7 +70,11 @@ namespace CommunicationTool.ViewModel
             };
             if (CR) cmd = [.. cmd, 0x0d];
             if (LF) cmd = [.. cmd, 0x0a];
-            if (IsConnect) await CommunicationPort!.SendAsync(cmd);
+            if (IsConnect)
+                if (TestTopPort != null)
+                    await TestTopPort.SendAsync(cmd);
+                else if (TestTopPort_Server != null)
+                    await TestTopPort_Server.SendAsync(ClientId, cmd);
         }
 
         private bool CanSend()

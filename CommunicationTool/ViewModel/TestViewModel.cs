@@ -194,7 +194,25 @@ namespace CommunicationTool.ViewModel
 
         partial void OnIsConnectChanged(bool value)
         {
-            SendViewModel.CommunicationPort = _TopPort;
+            switch (PhysicalPortConnection.Type)
+            {
+                case TestType.SerialPort:
+                case TestType.TcpClient:
+                    SendViewModel.TestTopPort = _TopPort;
+                    break;
+                case TestType.TcpServer:
+                    SendViewModel.ClientId = _tabItem!.ClientId;
+                    SendViewModel.TestTopPort_Server = _TopPort_Server;
+                    break;
+                case TestType.UdpClient:
+                    break;
+                case TestType.ClassicBluetoothClient:
+                    break;
+                case TestType.ClassicBluetoothServer:
+                    break;
+                default:
+                    break;
+            }
             SendViewModel.IsConnect = value;
         }
 
@@ -425,11 +443,11 @@ namespace CommunicationTool.ViewModel
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
-                IsConnect = true;
                 _tabItem = TabItems.SingleOrDefault(_ => _.Header == PhysicalPortConnection.Info) ?? new TabItemViewModel(clientId) { Header = PhysicalPortConnection.Info };
                 _tabItem.IsConnect = true;
                 TabItems.Add(_tabItem);
                 SelectedTabItem = _tabItem;
+                IsConnect = true;
                 ConnectCommand.NotifyCanExecuteChanged();
                 //Exception = "";
             });
