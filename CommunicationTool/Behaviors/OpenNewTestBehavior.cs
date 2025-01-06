@@ -36,33 +36,19 @@ namespace CommunicationTool.Behaviors
 
         private async void AssociatedObject_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            switch (TestType)
+            TestConfig config = TestType switch
             {
-                case TestType.SerialPort:
-                    {
-                        var config = new TestConfig(new SerialPortConfig()) { Id = Guid.NewGuid() };
-                        Connection.TestConfigs.Add(config);
-                        var test = new View.TopPortTest { DataContext = new TopPortViewModel(Connection, config) };
-                        test.Show();
-                    }
-                    break;
-                case TestType.TcpClient:
-                    {
-                        var config = new TestConfig(new TcpClientConfig()) { Id = Guid.NewGuid() };
-                        Connection.TestConfigs.Add(config);
-                        var test = new View.TopPortTest { DataContext = new TopPortViewModel(Connection, config) };
-                        test.Show();
-                    }
-                    break;
-                case TestType.TcpServer:
-                    break;
-                case TestType.ClassicBluetoothClient:
-                    break;
-                case TestType.ClassicBluetoothServer:
-                    break;
-                default:
-                    break;
-            }
+                TestType.SerialPort => new(new SerialPortConfig()),
+                TestType.TcpClient => new(new TcpClientConfig()),
+                TestType.TcpServer => new(new TcpServerConfig()),
+                TestType.ClassicBluetoothClient => new(),
+                TestType.ClassicBluetoothServer => new(),
+                TestType.UdpClient => new(),
+                _ => new(),
+            };
+            Connection.TestConfigs.Add(config);
+            var test = new View.Test { DataContext = new TestViewModel(Connection, config) };
+            test.Show();
             await Connection.TrySaveChangeAsync();
         }
 

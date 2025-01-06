@@ -30,7 +30,7 @@ namespace CommunicationTool.Behaviors
         {
             foreach (var item in Connection.TestConfigs)
             {
-                var test = new View.TopPortTest { DataContext = new TopPortViewModel(Connection, item) };
+                var test = new View.Test { DataContext = new TestViewModel(Connection, item) };
                 test.Show();
             }
         }

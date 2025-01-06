@@ -7,7 +7,7 @@ namespace Config.Model
     public partial class TestConfig : ObservableObject
     {
         [ObservableProperty]
-        private Guid _Id;
+        private Guid _Id = Guid.NewGuid();
         [ObservableProperty]
         private string? _TestName;
         [ObservableProperty]

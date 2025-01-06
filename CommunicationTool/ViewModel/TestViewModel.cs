@@ -1,7 +1,8 @@
-﻿using Communication.Interfaces;
-using CommunicationTool.Model;
+﻿using CommunicationTool.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using CommunityToolkit.Mvvm.Messaging.Messages;
 using Config;
 using Config.Interface;
 using Config.Model;
@@ -19,7 +20,7 @@ using Utils;
 
 namespace CommunicationTool.ViewModel
 {
-    public partial class TopPortViewModel : ObservableObject
+    public partial class TestViewModel : ObservableObject
     {
         [ObservableProperty]
         private bool _isPopupVisible;
@@ -52,8 +53,6 @@ namespace CommunicationTool.ViewModel
         private string? _Title;
 
         [ObservableProperty]
-        private ReceiveViewModel _receiveViewModel = new();
-        [ObservableProperty]
         private SendViewModel _sendViewModel = new();
 
         [ObservableProperty]
@@ -64,12 +63,17 @@ namespace CommunicationTool.ViewModel
         private int _sendInterval;
         [ObservableProperty]
         private Guid _currentSendId = Guid.Empty;
+        [ObservableProperty]
+        private TabItemViewModel? _SelectedTabItem;
 
         private readonly Connection _config;
         private CancellationTokenSource? _cts;
         private ITopPort? _TopPort;
+        private ITopPort_Server? _TopPort_Server;
+        private TabItemViewModel? _tabItem;
+        public ObservableCollection<TabItemViewModel> TabItems { get; set; } = [];
 
-        public TopPortViewModel(Connection config, TestConfig test)
+        public TestViewModel(Connection config, TestConfig test)
         {
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
@@ -90,6 +94,13 @@ namespace CommunicationTool.ViewModel
                 item.PropertyChanged += SendCmd_PropertyChanged;
             }
             Status = PhysicalPortConnection.ToString();
+            WeakReferenceMessenger.Default.Register<CloseTabItemMessage>(this, async (r, m) =>
+            {
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    TabItems.Remove(TabItems.Where(_ => _.ClientId == m.Value).First());
+                });
+            });
         }
 
         private async void SendCmds_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -240,31 +251,80 @@ namespace CommunicationTool.ViewModel
         {
             if (IsConnect)
             {
-                await _TopPort!.CloseAsync();
+                switch (PhysicalPortConnection.Type)
+                {
+                    case TestType.TcpServer:
+                        await _TopPort_Server!.CloseAsync();
+                        break;
+                    case TestType.SerialPort:
+                    case TestType.TcpClient:
+                        await _TopPort!.CloseAsync();
+                        var str = _tabItem!.Header;
+                        if (str != null)
+                            if (str.Contains("掉线尝试重连"))
+                            {
+                                _tabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
+                            }
+                            else
+                            {
+                                _tabItem.Header += " 测试关闭";
+                            }
+                        break;
+
+                    case TestType.UdpClient:
+                        break;
+                    case TestType.ClassicBluetoothClient:
+                        break;
+                    case TestType.ClassicBluetoothServer:
+                        break;
+                    default:
+                        break;
+                }
+
                 IsOpen = false;
             }
             else
             {
-                IPhysicalPort physicalPort = null;
                 switch (PhysicalPortConnection.Type)
                 {
                     case TestType.SerialPort:
                         {
                             var Connection = (SerialPortConfig)PhysicalPortConnection;
-                            physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
+                            var physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
                             {
                                 DtrEnable = Connection.DTR,
                                 RtsEnable = Connection.RTS
                             };
+
+                            _TopPort = new TopPort(physicalPort, NewParser());
+
+                            _TopPort.OnSentData += TopPort_OnSentData;
+                            _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
+                            _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                            _TopPort.OnDisconnect += TopPort_OnDisconnect;
                         }
                         break;
                     case TestType.TcpClient:
                         {
                             var Connection = (TcpClientConfig)PhysicalPortConnection;
-                            physicalPort = new Communication.Bus.PhysicalPort.TcpClient(Connection.HostName, Connection.Port);
+                            var physicalPort = new Communication.Bus.PhysicalPort.TcpClient(Connection.HostName, Connection.Port);
+
+                            _TopPort = new TopPort(physicalPort, NewParser());
+
+                            _TopPort.OnSentData += TopPort_OnSentData;
+                            _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
+                            _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                            _TopPort.OnDisconnect += TopPort_OnDisconnect;
                         }
                         break;
                     case TestType.TcpServer:
+                        {
+                            var Connection = (TcpServerConfig)PhysicalPortConnection;
+                            var physicalPort = new Communication.Bus.TcpServer(Connection.HostName, Connection.Port);
+                            _TopPort_Server = new TopPort_Server(physicalPort, async () => await Task.FromResult(NewParser()));
+
+                            _TopPort_Server.OnClientConnect += Test_OnClientConnect;
+                        }
                         break;
                     case TestType.UdpClient:
                         break;
@@ -276,15 +336,11 @@ namespace CommunicationTool.ViewModel
                         break;
                 }
 
-                _TopPort = new TopPort(physicalPort, NewParser());
 
-                _TopPort.OnSentData += SerialPort_OnSentData;
-                _TopPort.OnReceiveParsedData += SerialPort_OnReceiveParsedData;
-                _TopPort.OnConnect += SerialPort_OnConnect;
-                _TopPort.OnDisconnect += SerialPort_OnDisconnect;
                 try
                 {
-                    await _TopPort.OpenAsync();
+                    if (_TopPort != null) await _TopPort.OpenAsync();
+                    if (_TopPort_Server != null) await _TopPort_Server.OpenAsync();
                     IsOpen = true;
                 }
                 catch
@@ -365,40 +421,48 @@ namespace CommunicationTool.ViewModel
             return !IsOpen || IsConnect;
         }
 
-        private async Task SerialPort_OnDisconnect()
-        {
-            await App.Current.Dispatcher.InvokeAsync(() =>
-            {
-                IsConnect = false;
-                ConnectCommand.NotifyCanExecuteChanged();
-                //Exception = "通讯断连,等待连接...";
-            });
-        }
-
-        private async Task SerialPort_OnConnect()
+        private async Task Test_OnClientConnect(Guid clientId)
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
                 IsConnect = true;
+                _tabItem = TabItems.SingleOrDefault(_ => _.Header == PhysicalPortConnection.Info) ?? new TabItemViewModel(clientId) { Header = PhysicalPortConnection.Info };
+                _tabItem.IsConnect = true;
+                TabItems.Add(_tabItem);
+                SelectedTabItem = _tabItem;
                 ConnectCommand.NotifyCanExecuteChanged();
                 //Exception = "";
             });
         }
 
-        private async Task SerialPort_OnReceiveParsedData(byte[] data)
+        private async Task TopPort_OnDisconnect()
+        {
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                IsConnect = false;
+                _tabItem!.IsConnect = false;
+                ConnectCommand.NotifyCanExecuteChanged();
+                if (!_tabItem!.Header!.Contains("测试关闭"))
+                    _tabItem!.Header += " 掉线尝试重连";
+                //Exception = "通讯断连,等待连接...";
+            });
+        }
+
+        private async Task TopPort_OnReceiveParsedData(byte[] data)
         {
             try
             {
                 await App.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Response));
-                    ReceiveViewModel.RsponseLength += data.Length;
+                    var receiveViewModel = _tabItem!.ReceiveViewModel;
+                    receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Response));
+                    receiveViewModel.RsponseLength += data.Length;
                 });
             }
             catch { }
         }
 
-        private async Task SerialPort_OnSentData(byte[] data)
+        private async Task TopPort_OnSentData(byte[] data)
         {
             _ = Task.Run(async () =>
             {
@@ -406,8 +470,9 @@ namespace CommunicationTool.ViewModel
                 {
                     await App.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        ReceiveViewModel.CommunicationDatas.Add(new CommunicationData(data, ReceiveViewModel.SelectedShowType, TransferDirection.Request));
-                        ReceiveViewModel.RequestLength += data.Length;
+                        var receiveViewModel = _tabItem!.ReceiveViewModel;
+                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Request));
+                        receiveViewModel.RequestLength += data.Length;
                     });
                 }
                 catch { }
@@ -470,4 +535,6 @@ namespace CommunicationTool.ViewModel
             return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
         }
     }
+
+    internal class CloseTabItemMessage(Guid clientId) : ValueChangedMessage<Guid>(clientId) { }
 }
