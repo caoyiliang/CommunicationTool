@@ -273,6 +273,7 @@ namespace CommunicationTool.ViewModel
                 {
                     case TestType.TcpServer:
                         await _TopPort_Server!.CloseAsync();
+                        IsConnect = false;
                         break;
                     case TestType.SerialPort:
                     case TestType.TcpClient:
@@ -283,7 +284,7 @@ namespace CommunicationTool.ViewModel
                             {
                                 _tabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
                             }
-                            else
+                            else if (!str.Contains("测试关闭"))
                             {
                                 _tabItem.Header += " 测试关闭";
                             }
@@ -342,6 +343,9 @@ namespace CommunicationTool.ViewModel
                             _TopPort_Server = new TopPort_Server(physicalPort, async () => await Task.FromResult(NewParser()));
 
                             _TopPort_Server.OnClientConnect += Test_OnClientConnect;
+                            _TopPort_Server.OnClientDisconnect += TopPort_Server_OnClientDisconnect;
+                            _TopPort_Server.OnReceiveParsedData += TopPort_Server_OnReceiveParsedData;
+                            _TopPort_Server.OnSentData += TopPort_Server_OnSentData;
                         }
                         break;
                     case TestType.UdpClient:
@@ -453,6 +457,21 @@ namespace CommunicationTool.ViewModel
             });
         }
 
+        private async Task TopPort_Server_OnClientDisconnect(Guid clientId)
+        {
+            await App.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var tabItem = TabItems.SingleOrDefault(_ => _.ClientId == clientId);
+                if (tabItem != null)
+                {
+                    tabItem.IsConnect = false;
+                    ConnectCommand.NotifyCanExecuteChanged();
+                    tabItem.Header += " 测试关闭";
+                }
+                //Exception = "通讯断连,等待连接...";
+            });
+        }
+
         private async Task TopPort_OnDisconnect()
         {
             await App.Current.Dispatcher.InvokeAsync(() =>
@@ -464,6 +483,44 @@ namespace CommunicationTool.ViewModel
                     _tabItem!.Header += " 掉线尝试重连";
                 //Exception = "通讯断连,等待连接...";
             });
+        }
+
+        private async Task TopPort_Server_OnReceiveParsedData(Guid clientId, byte[] data)
+        {
+            try
+            {
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == clientId)?.ReceiveViewModel;
+                    if (receiveViewModel != null)
+                    {
+                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Response));
+                        receiveViewModel.RsponseLength += data.Length;
+                    }
+                });
+            }
+            catch { }
+        }
+
+        private async Task TopPort_Server_OnSentData(byte[] data, Guid clientId)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await App.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == clientId)?.ReceiveViewModel;
+                        if (receiveViewModel != null)
+                        {
+                            receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Request));
+                            receiveViewModel.RequestLength += data.Length;
+                        }
+                    });
+                }
+                catch { }
+            });
+            await Task.CompletedTask;
         }
 
         private async Task TopPort_OnReceiveParsedData(byte[] data)

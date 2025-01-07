@@ -77,6 +77,13 @@
                 </Style>
             </DockPanel.Resources>
             <StackPanel Orientation="Horizontal" Margin="10,3">
+                <TextBlock Text="清屏" TextDecorations="Underline" TextWrapping="Wrap">
+                    <TextBlock.InputBindings>
+                        <MouseBinding Gesture="LeftClick" Command="{Binding ClearCommand}" />
+                    </TextBlock.InputBindings>
+                </TextBlock>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="10,0">
                 <TextBlock Text="接收字节数:"/>
                 <TextBlock Text="{Binding RsponseLength}" TextDecorations="Underline" TextWrapping="Wrap">
                     <TextBlock.InputBindings>

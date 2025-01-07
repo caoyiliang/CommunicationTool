@@ -38,5 +38,13 @@ namespace CommunicationTool.ViewModel
         {
             RequestLength = 0;
         }
+
+        [RelayCommand]
+        private void Clear()
+        {
+            RequestLength = 0;
+            RsponseLength = 0;
+            CommunicationDatas.Clear();
+        }
     }
 }
