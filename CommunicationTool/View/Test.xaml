@@ -164,6 +164,27 @@
                                     </Grid>
                                 </Grid>
                             </DataTemplate>
+                            <DataTemplate x:Key="TcpServerTemplate">
+                                <Grid Width="250" Height="100" Background="#590000FF">
+                                    <Grid HorizontalAlignment="Center" 
+                                          VerticalAlignment="Center" 
+                                          d:DataContext="{d:DesignInstance Type=viewmodel:TestViewModel}" 
+                                          DataContext="{Binding DataContext,RelativeSource={RelativeSource AncestorType=Window}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="监听地址"/>
+                                        <ComboBox ItemsSource="{Binding HostName}" SelectedItem="{Binding PhysicalPortConnection.HostName}" Grid.Column="1" Width="120"/>
+                                        <Label Content="监听端口" Grid.Row="1"/>
+                                        <TextBox Text="{Binding PhysicalPortConnection.Port}" Grid.Column="1" Grid.Row="1"/>
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
                         </Popup.Resources>
                         <ContentControl>
                             <ContentControl.Style>
@@ -175,6 +196,9 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.TcpClient}">
                                             <Setter Property="ContentTemplate" Value="{StaticResource TcpClientTemplate}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.TcpServer}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource TcpServerTemplate}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

@@ -12,6 +12,8 @@ using Parser.Parsers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO.Ports;
+using System.Net.Sockets;
+using System.Net;
 using System.Text;
 using System.Windows;
 using TopPortLib;
@@ -51,6 +53,8 @@ namespace CommunicationTool.ViewModel
         private ParserConfig _parserConfig;
         [ObservableProperty]
         private string? _Title;
+        [ObservableProperty]
+        private List<string> _hostName = ["Any"];
 
         [ObservableProperty]
         private SendViewModel _sendViewModel = new();
@@ -78,6 +82,14 @@ namespace CommunicationTool.ViewModel
             PortNames = SerialPort.GetPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
+            IPHostEntry ipHostEntry = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (IPAddress ip in ipHostEntry.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    HostName.Add(ip.ToString());
+                }
+            }
             _config = config;
             Test = test;
             Title = test.TestName;
@@ -339,7 +351,7 @@ namespace CommunicationTool.ViewModel
                     case TestType.TcpServer:
                         {
                             var Connection = (TcpServerConfig)PhysicalPortConnection;
-                            var physicalPort = new Communication.Bus.TcpServer(Connection.HostName, Connection.Port);
+                            var physicalPort = new Communication.Bus.TcpServer(Connection.HostName == "Any" ? IPAddress.Any.ToString() : Connection.HostName, Connection.Port);
                             _TopPort_Server = new TopPort_Server(physicalPort, async () => await Task.FromResult(NewParser()));
 
                             _TopPort_Server.OnClientConnect += Test_OnClientConnect;

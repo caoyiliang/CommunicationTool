@@ -6,7 +6,7 @@ namespace Config.Model
     public partial class TcpServerConfig : ObservableObject, IPhysicalPortConfig
     {
         [ObservableProperty]
-        private string _HostName = "0.0.0.0";
+        private string _HostName = "Any";
         [ObservableProperty]
         private int _Port = 7778;
 
