@@ -213,13 +213,12 @@ namespace CommunicationTool.ViewModel
             {
                 case TestType.SerialPort:
                 case TestType.TcpClient:
+                case TestType.UdpClient:
                     SendViewModel.TestTopPort = _TopPort;
                     break;
                 case TestType.TcpServer:
                     SendViewModel.ClientId = value.ClientId;
                     SendViewModel.TestTopPort_Server = _TopPort_Server;
-                    break;
-                case TestType.UdpClient:
                     break;
                 case TestType.ClassicBluetoothClient:
                     break;
@@ -292,6 +291,7 @@ namespace CommunicationTool.ViewModel
                         break;
                     case TestType.SerialPort:
                     case TestType.TcpClient:
+                    case TestType.UdpClient:
                         await _TopPort!.CloseAsync();
                         var str = TabItem!.Header;
                         if (str != null)
@@ -303,9 +303,6 @@ namespace CommunicationTool.ViewModel
                             {
                                 TabItem.Header += " 测试关闭";
                             }
-                        break;
-
-                    case TestType.UdpClient:
                         break;
                     case TestType.ClassicBluetoothClient:
                         break;
@@ -364,6 +361,17 @@ namespace CommunicationTool.ViewModel
                         }
                         break;
                     case TestType.UdpClient:
+                        {
+                            var Connection = (UdpClientConfig)PhysicalPortConnection;
+                            var physicalPort = new Communication.Bus.PhysicalPort.UdpClient(Connection.RemoteHostName, Connection.RemotePort,new IPEndPoint(IPAddress.Parse(Connection.HostName), Connection.Port));
+
+                            _TopPort = new TopPort(physicalPort, NewParser());
+
+                            _TopPort.OnSentData += TopPort_OnSentData;
+                            _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
+                            _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                            _TopPort.OnDisconnect += TopPort_OnDisconnect;
+                        }
                         break;
                     case TestType.ClassicBluetoothClient:
                         break;

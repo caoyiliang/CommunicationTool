@@ -41,9 +41,9 @@ namespace CommunicationTool.Behaviors
                 TestType.SerialPort => new(new SerialPortConfig()),
                 TestType.TcpClient => new(new TcpClientConfig()),
                 TestType.TcpServer => new(new TcpServerConfig()),
+                TestType.UdpClient => new(new UdpClientConfig()),
                 TestType.ClassicBluetoothClient => new(),
                 TestType.ClassicBluetoothServer => new(),
-                TestType.UdpClient => new(),
                 _ => new(),
             };
             Connection.TestConfigs.Add(config);
