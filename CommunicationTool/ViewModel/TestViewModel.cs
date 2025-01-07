@@ -12,8 +12,8 @@ using Parser.Parsers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO.Ports;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Windows;
 using TopPortLib;
@@ -69,12 +69,14 @@ namespace CommunicationTool.ViewModel
         private Guid _currentSendId = Guid.Empty;
         [ObservableProperty]
         private TabItemViewModel? _SelectedTabItem;
+        [ObservableProperty]
+        private TabItemViewModel? _tabItem;
 
         private readonly Connection _config;
         private CancellationTokenSource? _cts;
         private ITopPort? _TopPort;
         private ITopPort_Server? _TopPort_Server;
-        private TabItemViewModel? _tabItem;
+
         public ObservableCollection<TabItemViewModel> TabItems { get; set; } = [];
 
         public TestViewModel(Connection config, TestConfig test)
@@ -204,8 +206,9 @@ namespace CommunicationTool.ViewModel
             }
         }
 
-        partial void OnIsConnectChanged(bool value)
+        partial void OnSelectedTabItemChanged(TabItemViewModel? value)
         {
+            if (value == null) return;
             switch (PhysicalPortConnection.Type)
             {
                 case TestType.SerialPort:
@@ -213,7 +216,7 @@ namespace CommunicationTool.ViewModel
                     SendViewModel.TestTopPort = _TopPort;
                     break;
                 case TestType.TcpServer:
-                    SendViewModel.ClientId = _tabItem!.ClientId;
+                    SendViewModel.ClientId = value.ClientId;
                     SendViewModel.TestTopPort_Server = _TopPort_Server;
                     break;
                 case TestType.UdpClient:
@@ -225,7 +228,7 @@ namespace CommunicationTool.ViewModel
                 default:
                     break;
             }
-            SendViewModel.IsConnect = value;
+            SendViewModel.IsConnect = value.IsConnect;
         }
 
         partial void OnTitleChanged(string? value)
@@ -290,15 +293,15 @@ namespace CommunicationTool.ViewModel
                     case TestType.SerialPort:
                     case TestType.TcpClient:
                         await _TopPort!.CloseAsync();
-                        var str = _tabItem!.Header;
+                        var str = TabItem!.Header;
                         if (str != null)
                             if (str.Contains("掉线尝试重连"))
                             {
-                                _tabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
+                                TabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
                             }
                             else if (!str.Contains("测试关闭"))
                             {
-                                _tabItem.Header += " 测试关闭";
+                                TabItem.Header += " 测试关闭";
                             }
                         break;
 
@@ -457,12 +460,12 @@ namespace CommunicationTool.ViewModel
 
         private async Task Test_OnClientConnect(Guid clientId)
         {
-            await App.Current.Dispatcher.InvokeAsync(() =>
+            await App.Current.Dispatcher.InvokeAsync(async () =>
             {
-                _tabItem = TabItems.SingleOrDefault(_ => _.Header == PhysicalPortConnection.Info) ?? new TabItemViewModel(clientId) { Header = PhysicalPortConnection.Info };
-                _tabItem.IsConnect = true;
-                TabItems.Add(_tabItem);
-                SelectedTabItem = _tabItem;
+                TabItem = TabItems.SingleOrDefault(_ => _.ClientId == clientId) ?? new TabItemViewModel(clientId) { Header = PhysicalPortConnection.Type == TestType.TcpServer ? await _TopPort_Server!.GetClientInfos(clientId) : PhysicalPortConnection.Info };
+                TabItem.IsConnect = true;
+                TabItems.Add(TabItem);
+                SelectedTabItem = TabItem;
                 IsConnect = true;
                 ConnectCommand.NotifyCanExecuteChanged();
                 //Exception = "";
@@ -489,10 +492,10 @@ namespace CommunicationTool.ViewModel
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
                 IsConnect = false;
-                _tabItem!.IsConnect = false;
+                TabItem!.IsConnect = false;
                 ConnectCommand.NotifyCanExecuteChanged();
-                if (!_tabItem!.Header!.Contains("测试关闭"))
-                    _tabItem!.Header += " 掉线尝试重连";
+                if (!TabItem!.Header!.Contains("测试关闭"))
+                    TabItem!.Header += " 掉线尝试重连";
                 //Exception = "通讯断连,等待连接...";
             });
         }
@@ -541,7 +544,7 @@ namespace CommunicationTool.ViewModel
             {
                 await App.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    var receiveViewModel = _tabItem!.ReceiveViewModel;
+                    var receiveViewModel = TabItem!.ReceiveViewModel;
                     receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Response));
                     receiveViewModel.RsponseLength += data.Length;
                 });
@@ -557,7 +560,7 @@ namespace CommunicationTool.ViewModel
                 {
                     await App.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        var receiveViewModel = _tabItem!.ReceiveViewModel;
+                        var receiveViewModel = TabItem!.ReceiveViewModel;
                         receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Request));
                         receiveViewModel.RequestLength += data.Length;
                     });

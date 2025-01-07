@@ -14,10 +14,10 @@ namespace Config.Model
         [ObservableProperty]
         private int _RemotePort = 2756;
 
-        public string Info => $"本地:{HostName}:{Port} 远程:{RemoteHostName}:{RemotePort}";
+        public string Info => $"{HostName}:{Port}";
 
         public TestType Type => TestType.TcpServer;
 
-        public override string ToString() => $"当前[连接方式:{Type}] [{Info}]";
+        public override string ToString() => $"当前[连接方式:{Type}] [本地:{HostName}:{Port} 远程:{RemoteHostName}:{RemotePort}]";
     }
 }
