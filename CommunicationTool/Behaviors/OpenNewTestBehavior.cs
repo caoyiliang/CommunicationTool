@@ -1,6 +1,7 @@
 ﻿using CommunicationTool.ViewModel;
 using Config;
 using Config.Model;
+using InTheHand.Net.Sockets;
 using Microsoft.Xaml.Behaviors;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,8 +43,8 @@ namespace CommunicationTool.Behaviors
                 TestType.TcpClient => new(new TcpClientConfig()),
                 TestType.TcpServer => new(new TcpServerConfig()),
                 TestType.UdpClient => new(new UdpClientConfig()),
-                TestType.ClassicBluetoothClient => new(),
-                TestType.ClassicBluetoothServer => new(),
+                TestType.ClassicBluetoothClient => new(new BluetoothClientConfig()),
+                TestType.ClassicBluetoothServer => new(new BluetoothServerConfig()),
                 _ => new(),
             };
             Connection.TestConfigs.Add(config);

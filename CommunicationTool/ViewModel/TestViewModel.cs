@@ -1,4 +1,5 @@
-﻿using CommunicationTool.Model;
+﻿using Communication.Bluetooth;
+using CommunicationTool.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -6,6 +7,8 @@ using CommunityToolkit.Mvvm.Messaging.Messages;
 using Config;
 using Config.Interface;
 using Config.Model;
+using InTheHand.Net.Bluetooth;
+using InTheHand.Net.Sockets;
 using Parser;
 using Parser.Interfaces;
 using Parser.Parsers;
@@ -55,6 +58,10 @@ namespace CommunicationTool.ViewModel
         private string? _Title;
         [ObservableProperty]
         private List<string> _hostName = ["Any"];
+        [ObservableProperty]
+        private BluetoothDevice? _SelectedDevice;
+        [ObservableProperty]
+        private ObservableCollection<BluetoothDevice> _devices = [];
 
         [ObservableProperty]
         private SendViewModel _sendViewModel = new();
@@ -92,6 +99,7 @@ namespace CommunicationTool.ViewModel
                     HostName.Add(ip.ToString());
                 }
             }
+            BluetoothRadio.Default.Mode = RadioMode.Discoverable;
             _config = config;
             Test = test;
             Title = test.TestName;
@@ -214,15 +222,13 @@ namespace CommunicationTool.ViewModel
                 case TestType.SerialPort:
                 case TestType.TcpClient:
                 case TestType.UdpClient:
+                case TestType.ClassicBluetoothClient:
                     SendViewModel.TestTopPort = _TopPort;
                     break;
                 case TestType.TcpServer:
+                case TestType.ClassicBluetoothServer:
                     SendViewModel.ClientId = value.ClientId;
                     SendViewModel.TestTopPort_Server = _TopPort_Server;
-                    break;
-                case TestType.ClassicBluetoothClient:
-                    break;
-                case TestType.ClassicBluetoothServer:
                     break;
                 default:
                     break;
@@ -363,7 +369,7 @@ namespace CommunicationTool.ViewModel
                     case TestType.UdpClient:
                         {
                             var Connection = (UdpClientConfig)PhysicalPortConnection;
-                            var physicalPort = new Communication.Bus.PhysicalPort.UdpClient(Connection.RemoteHostName, Connection.RemotePort,new IPEndPoint(IPAddress.Parse(Connection.HostName), Connection.Port));
+                            var physicalPort = new Communication.Bus.PhysicalPort.UdpClient(Connection.RemoteHostName, Connection.RemotePort, new IPEndPoint(IPAddress.Parse(Connection.HostName), Connection.Port));
 
                             _TopPort = new TopPort(physicalPort, NewParser());
 
@@ -374,8 +380,28 @@ namespace CommunicationTool.ViewModel
                         }
                         break;
                     case TestType.ClassicBluetoothClient:
+                        {
+                            if (SelectedDevice != null)
+                            {
+                                var physicalPort = new BluetoothClassic(SelectedDevice.Addr);
+                                _TopPort = new TopPort(physicalPort, NewParser());
+                                _TopPort.OnSentData += TopPort_OnSentData;
+                                _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
+                                _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                                _TopPort.OnDisconnect += TopPort_OnDisconnect;
+                            }
+                        }
                         break;
                     case TestType.ClassicBluetoothServer:
+                        {
+                            var physicalPort = new BluetoothClassic_Server();
+                            _TopPort_Server = new TopPort_Server(physicalPort, async () => await Task.FromResult(NewParser()));
+
+                            _TopPort_Server.OnClientConnect += Test_OnClientConnect;
+                            _TopPort_Server.OnClientDisconnect += TopPort_Server_OnClientDisconnect;
+                            _TopPort_Server.OnReceiveParsedData += TopPort_Server_OnReceiveParsedData;
+                            _TopPort_Server.OnSentData += TopPort_Server_OnSentData;
+                        }
                         break;
                     default:
                         break;
@@ -631,6 +657,24 @@ namespace CommunicationTool.ViewModel
         {
             var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
             return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
+        }
+
+        [RelayCommand]
+        private async Task ScanAsync()
+        {
+            Devices.Clear();
+            _ = Task.Run(async () =>
+            {
+                using var bluetoothClient = new BluetoothClient();
+                await foreach (var item in bluetoothClient.DiscoverDevicesAsync())
+                {
+                    await App.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Devices.Add(new() { Name = item.DeviceName, Addr = item.DeviceAddress.ToString() });
+                    });
+                }
+            });
+            await Task.CompletedTask;
         }
     }
 

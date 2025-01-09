@@ -12,6 +12,7 @@ namespace CommunicationTool.Converters
             {
                 TestType.SerialPort => (bool)values[1] ? "关闭串口" : "打开串口",
                 TestType.TcpServer => (bool)values[1] ? "关闭监听" : "监听",
+                TestType.ClassicBluetoothServer => (bool)values[1] ? "关闭监听" : "监听",
                 _ => (bool)values[1] ? "关闭连接" : "打开连接",
             };
         }

@@ -213,6 +213,23 @@
                                     </Grid>
                                 </Grid>
                             </DataTemplate>
+                            <DataTemplate x:Key="ClassicBluetoothServerTemplate">
+                                <Grid Width="300" Height="25" Background="#590000FF">
+                                    <TextBlock Text="若对方一直无法搜索到,请手动将蓝牙设置改为可发现" Foreground="White" VerticalAlignment="Center" Margin="5"/>
+                                </Grid>
+                            </DataTemplate>
+                            <DataTemplate x:Key="ClassicBluetoothClientTemplate">
+                                <Grid Width="300" Height="250" Background="#590000FF"
+                                      d:DataContext="{d:DesignInstance Type=viewmodel:TestViewModel}" 
+                                      DataContext="{Binding DataContext,RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Button Content="Scan" Style="{x:Null}" Command="{Binding ScanCommand}"/>
+                                    <ListBox ItemsSource="{Binding Devices}" Grid.Row="1" SelectedItem="{Binding SelectedDevice}"/>
+                                </Grid>
+                            </DataTemplate>
                         </Popup.Resources>
                         <ContentControl>
                             <ContentControl.Style>
@@ -230,6 +247,12 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.UdpClient}">
                                             <Setter Property="ContentTemplate" Value="{StaticResource UdpClientTemplate}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.ClassicBluetoothServer}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource ClassicBluetoothServerTemplate}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding PhysicalPortConnection.Type}" Value="{x:Static config:TestType.ClassicBluetoothClient}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource ClassicBluetoothClientTemplate}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
