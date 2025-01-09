@@ -27,6 +27,7 @@ namespace CommunicationTool.ViewModel
 {
     public partial class TestViewModel : ObservableObject
     {
+        private Guid _ClientId = Guid.NewGuid();
         [ObservableProperty]
         private bool _isPopupVisible;
         [ObservableProperty]
@@ -77,7 +78,7 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private TabItemViewModel? _SelectedTabItem;
         [ObservableProperty]
-        private TabItemViewModel? _tabItem;
+        private Guid? _CurrentClientId;
 
         private readonly Connection _config;
         private CancellationTokenSource? _cts;
@@ -118,10 +119,14 @@ namespace CommunicationTool.ViewModel
             Status = PhysicalPortConnection.ToString();
             WeakReferenceMessenger.Default.Register<CloseTabItemMessage>(this, async (r, m) =>
             {
-                await App.Current.Dispatcher.InvokeAsync(() =>
+                if (_ClientId == m.Value.parentId)
                 {
-                    TabItems.Remove(TabItems.Where(_ => _.ClientId == m.Value).First());
-                });
+                    await App.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        var tabItem = TabItems.FirstOrDefault(_ => _.ClientId == m.Value.clientId);
+                        if (tabItem != null) TabItems.Remove(tabItem);
+                    });
+                }
             });
         }
 
@@ -217,6 +222,7 @@ namespace CommunicationTool.ViewModel
         partial void OnSelectedTabItemChanged(TabItemViewModel? value)
         {
             if (value == null) return;
+            CurrentClientId = value.ClientId;
             switch (PhysicalPortConnection.Type)
             {
                 case TestType.SerialPort:
@@ -227,7 +233,7 @@ namespace CommunicationTool.ViewModel
                     break;
                 case TestType.TcpServer:
                 case TestType.ClassicBluetoothServer:
-                    SendViewModel.ClientId = value.ClientId;
+                    SendViewModel.ClientId = CurrentClientId.Value;
                     SendViewModel.TestTopPort_Server = _TopPort_Server;
                     break;
                 default:
@@ -299,15 +305,16 @@ namespace CommunicationTool.ViewModel
                     case TestType.TcpClient:
                     case TestType.UdpClient:
                         await _TopPort!.CloseAsync();
-                        var str = TabItem!.Header;
+                        var tabItem = TabItems.Where(_ => _.ClientId == CurrentClientId).First();
+                        var str = tabItem.Header;
                         if (str != null)
                             if (str.Contains("掉线尝试重连"))
                             {
-                                TabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
+                                tabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
                             }
                             else if (!str.Contains("测试关闭"))
                             {
-                                TabItem.Header += " 测试关闭";
+                                tabItem.Header += " 测试关闭";
                             }
                         break;
                     case TestType.ClassicBluetoothClient:
@@ -332,12 +339,12 @@ namespace CommunicationTool.ViewModel
                                 DtrEnable = Connection.DTR,
                                 RtsEnable = Connection.RTS
                             };
-
+                            CurrentClientId = Guid.NewGuid();
                             _TopPort = new TopPort(physicalPort, NewParser());
 
-                            _TopPort.OnSentData += TopPort_OnSentData;
-                            _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
-                            _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                            _TopPort.OnSentData += async data => await Test_OnSentData(data, CurrentClientId.Value);
+                            _TopPort.OnReceiveParsedData += async data => await Test_OnReceiveParsedData(CurrentClientId.Value, data);
+                            _TopPort.OnConnect += async () => await Test_OnClientConnect(CurrentClientId.Value);
                             _TopPort.OnDisconnect += TopPort_OnDisconnect;
                         }
                         break;
@@ -345,12 +352,12 @@ namespace CommunicationTool.ViewModel
                         {
                             var Connection = (TcpClientConfig)PhysicalPortConnection;
                             var physicalPort = new Communication.Bus.PhysicalPort.TcpClient(Connection.HostName, Connection.Port);
-
+                            CurrentClientId = Guid.NewGuid();
                             _TopPort = new TopPort(physicalPort, NewParser());
 
-                            _TopPort.OnSentData += TopPort_OnSentData;
-                            _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
-                            _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                            _TopPort.OnSentData += async data => await Test_OnSentData(data, CurrentClientId.Value);
+                            _TopPort.OnReceiveParsedData += async data => await Test_OnReceiveParsedData(CurrentClientId.Value, data);
+                            _TopPort.OnConnect += async () => await Test_OnClientConnect(CurrentClientId.Value);
                             _TopPort.OnDisconnect += TopPort_OnDisconnect;
                         }
                         break;
@@ -362,20 +369,20 @@ namespace CommunicationTool.ViewModel
 
                             _TopPort_Server.OnClientConnect += Test_OnClientConnect;
                             _TopPort_Server.OnClientDisconnect += TopPort_Server_OnClientDisconnect;
-                            _TopPort_Server.OnReceiveParsedData += TopPort_Server_OnReceiveParsedData;
-                            _TopPort_Server.OnSentData += TopPort_Server_OnSentData;
+                            _TopPort_Server.OnReceiveParsedData += Test_OnReceiveParsedData;
+                            _TopPort_Server.OnSentData += Test_OnSentData;
                         }
                         break;
                     case TestType.UdpClient:
                         {
                             var Connection = (UdpClientConfig)PhysicalPortConnection;
                             var physicalPort = new Communication.Bus.PhysicalPort.UdpClient(Connection.RemoteHostName, Connection.RemotePort, new IPEndPoint(IPAddress.Parse(Connection.HostName), Connection.Port));
-
+                            CurrentClientId = Guid.NewGuid();
                             _TopPort = new TopPort(physicalPort, NewParser());
 
-                            _TopPort.OnSentData += TopPort_OnSentData;
-                            _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
-                            _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                            _TopPort.OnSentData += async data => await Test_OnSentData(data, CurrentClientId.Value);
+                            _TopPort.OnReceiveParsedData += async data => await Test_OnReceiveParsedData(CurrentClientId.Value, data);
+                            _TopPort.OnConnect += async () => await Test_OnClientConnect(CurrentClientId.Value);
                             _TopPort.OnDisconnect += TopPort_OnDisconnect;
                         }
                         break;
@@ -384,10 +391,11 @@ namespace CommunicationTool.ViewModel
                             if (SelectedDevice != null)
                             {
                                 var physicalPort = new BluetoothClassic(SelectedDevice.Addr);
+                                CurrentClientId = Guid.NewGuid();
                                 _TopPort = new TopPort(physicalPort, NewParser());
-                                _TopPort.OnSentData += TopPort_OnSentData;
-                                _TopPort.OnReceiveParsedData += TopPort_OnReceiveParsedData;
-                                _TopPort.OnConnect += async () => await Test_OnClientConnect(Guid.NewGuid());
+                                _TopPort.OnSentData += async data => await Test_OnSentData(data, CurrentClientId.Value);
+                                _TopPort.OnReceiveParsedData += async data => await Test_OnReceiveParsedData(CurrentClientId.Value, data);
+                                _TopPort.OnConnect += async () => await Test_OnClientConnect(CurrentClientId.Value);
                                 _TopPort.OnDisconnect += TopPort_OnDisconnect;
                             }
                         }
@@ -399,8 +407,8 @@ namespace CommunicationTool.ViewModel
 
                             _TopPort_Server.OnClientConnect += Test_OnClientConnect;
                             _TopPort_Server.OnClientDisconnect += TopPort_Server_OnClientDisconnect;
-                            _TopPort_Server.OnReceiveParsedData += TopPort_Server_OnReceiveParsedData;
-                            _TopPort_Server.OnSentData += TopPort_Server_OnSentData;
+                            _TopPort_Server.OnReceiveParsedData += Test_OnReceiveParsedData;
+                            _TopPort_Server.OnSentData += Test_OnSentData;
                         }
                         break;
                     default:
@@ -496,7 +504,7 @@ namespace CommunicationTool.ViewModel
         {
             await App.Current.Dispatcher.InvokeAsync(async () =>
             {
-                TabItem = TabItems.SingleOrDefault(_ => _.ClientId == clientId) ?? new TabItemViewModel(clientId) { Header = PhysicalPortConnection.Type == TestType.TcpServer ? await _TopPort_Server!.GetClientInfos(clientId) : PhysicalPortConnection.Info };
+                var TabItem = TabItems.SingleOrDefault(_ => _.ClientId == clientId) ?? new TabItemViewModel(_ClientId, clientId) { Header = PhysicalPortConnection.Type == TestType.TcpServer ? await _TopPort_Server!.GetClientInfos(clientId) : PhysicalPortConnection.Info };
                 TabItem.IsConnect = true;
                 TabItems.Add(TabItem);
                 SelectedTabItem = TabItem;
@@ -526,15 +534,16 @@ namespace CommunicationTool.ViewModel
             await App.Current.Dispatcher.InvokeAsync(() =>
             {
                 IsConnect = false;
-                TabItem!.IsConnect = false;
+                var tabItem = TabItems.First(_ => _.ClientId == CurrentClientId);
+                tabItem.IsConnect = false;
                 ConnectCommand.NotifyCanExecuteChanged();
-                if (!TabItem!.Header!.Contains("测试关闭"))
-                    TabItem!.Header += " 掉线尝试重连";
+                if (!tabItem.Header!.Contains("测试关闭"))
+                    tabItem.Header += " 掉线尝试重连";
                 //Exception = "通讯断连,等待连接...";
             });
         }
 
-        private async Task TopPort_Server_OnReceiveParsedData(Guid clientId, byte[] data)
+        private async Task Test_OnReceiveParsedData(Guid clientId, byte[] data)
         {
             try
             {
@@ -551,7 +560,7 @@ namespace CommunicationTool.ViewModel
             catch { }
         }
 
-        private async Task TopPort_Server_OnSentData(byte[] data, Guid clientId)
+        private async Task Test_OnSentData(byte[] data, Guid clientId)
         {
             _ = Task.Run(async () =>
             {
@@ -565,38 +574,6 @@ namespace CommunicationTool.ViewModel
                             receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Request));
                             receiveViewModel.RequestLength += data.Length;
                         }
-                    });
-                }
-                catch { }
-            });
-            await Task.CompletedTask;
-        }
-
-        private async Task TopPort_OnReceiveParsedData(byte[] data)
-        {
-            try
-            {
-                await App.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    var receiveViewModel = TabItem!.ReceiveViewModel;
-                    receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Response));
-                    receiveViewModel.RsponseLength += data.Length;
-                });
-            }
-            catch { }
-        }
-
-        private async Task TopPort_OnSentData(byte[] data)
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await App.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        var receiveViewModel = TabItem!.ReceiveViewModel;
-                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Request));
-                        receiveViewModel.RequestLength += data.Length;
                     });
                 }
                 catch { }
@@ -626,7 +603,24 @@ namespace CommunicationTool.ViewModel
             };
             if (sendCmd.CR) cmd = [.. cmd, 0x0d];
             if (sendCmd.LF) cmd = [.. cmd, 0x0a];
-            if (IsConnect) await _TopPort!.SendAsync(cmd);
+            if (IsConnect)
+            {
+                switch (PhysicalPortConnection.Type)
+                {
+                    case TestType.SerialPort:
+                    case TestType.TcpClient:
+                    case TestType.UdpClient:
+                    case TestType.ClassicBluetoothClient:
+                        await _TopPort!.SendAsync(cmd);
+                        break;
+                    case TestType.TcpServer:
+                    case TestType.ClassicBluetoothServer:
+                        await _TopPort_Server!.SendAsync(CurrentClientId!.Value, cmd);
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         private bool CanSend()
@@ -678,5 +672,5 @@ namespace CommunicationTool.ViewModel
         }
     }
 
-    internal class CloseTabItemMessage(Guid clientId) : ValueChangedMessage<Guid>(clientId) { }
+    internal class CloseTabItemMessage(Guid parentId, Guid clientId) : ValueChangedMessage<(Guid parentId, Guid clientId)>((parentId, clientId)) { }
 }

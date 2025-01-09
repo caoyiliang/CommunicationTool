@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.Messaging;
 
 namespace CommunicationTool.Model
 {
-    public partial class TabItemViewModel(Guid clientId) : ObservableObject
+    public partial class TabItemViewModel(Guid parentId, Guid clientId) : ObservableObject
     {
         [ObservableProperty]
         private Guid _clientId = clientId;
@@ -19,7 +19,7 @@ namespace CommunicationTool.Model
         [RelayCommand]
         private void Close()
         {
-            WeakReferenceMessenger.Default.Send(new CloseTabItemMessage(ClientId));
+            WeakReferenceMessenger.Default.Send(new CloseTabItemMessage(parentId, ClientId));
         }
     }
 }
