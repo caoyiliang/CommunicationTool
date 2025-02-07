@@ -29,6 +29,8 @@ namespace CommunicationTool.ViewModel
     {
         private readonly Guid _ClientId = Guid.NewGuid();
         [ObservableProperty]
+        private bool _isPerformance = true;
+        [ObservableProperty]
         private bool _isPopupVisible;
         [ObservableProperty]
         private bool _hasPopupVisible;
@@ -440,22 +442,29 @@ namespace CommunicationTool.ViewModel
 
         private async Task SendQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data) arg)
         {
-            try
+            if (IsPerformance)
             {
-                await App.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
-                    if (receiveViewModel != null)
-                    {
-                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, TransferDirection.Request) { DateTime = arg.dateTime });
-                        receiveViewModel.RequestLength += arg.data.Length;
-                    }
-                });
+                _ = Task.Run(async () => await ProcessReceivedDataAsync(arg, TransferDirection.Request));
             }
-            catch { }
+            else
+            {
+                await ProcessReceivedDataAsync(arg, TransferDirection.Request);
+            }
         }
 
         private async Task ReceiveQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data) arg)
+        {
+            if (IsPerformance)
+            {
+                _ = Task.Run(async () => await ProcessReceivedDataAsync(arg, TransferDirection.Response));
+            }
+            else
+            {
+                await ProcessReceivedDataAsync(arg, TransferDirection.Response);
+            }
+        }
+
+        private async Task ProcessReceivedDataAsync((Guid clientId, DateTime dateTime, byte[] data) arg, TransferDirection transferDirection)
         {
             try
             {
@@ -464,8 +473,18 @@ namespace CommunicationTool.ViewModel
                     var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
                     if (receiveViewModel != null)
                     {
-                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, TransferDirection.Response) { DateTime = arg.dateTime });
-                        receiveViewModel.RsponseLength += arg.data.Length;
+                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, transferDirection) { DateTime = arg.dateTime });
+                        switch (transferDirection)
+                        {
+                            case TransferDirection.Request:
+                                receiveViewModel.RequestLength += arg.data.Length;
+                                break;
+                            case TransferDirection.Response:
+                                receiveViewModel.RsponseLength += arg.data.Length;
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 });
             }

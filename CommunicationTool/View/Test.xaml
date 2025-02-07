@@ -262,7 +262,8 @@
                 </Grid>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
-                <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Content="性能模式" IsChecked="{Binding IsPerformance}" Margin="0,0,10,0" ToolTip="性能模式：能高速显示接收的数据，但不保证显示顺序，因为有接收时间，如果不介意可以使用该模式，不勾选即可进入精准顺序模式"/>
                     <Button Content="{Binding HasPopupVisible,Converter={StaticResource PopupStatusConverter}}" Command="{Binding HasPopupCommand}"/>
                     <ctrl:CustomPopup IsOpen="{Binding HasPopupVisible}" StaysOpen="True" Placement="Right" PlacementTarget="{Binding ElementName=window}" AllowsTransparency="True" >
                         <Border Background="#88FFFFFF" CornerRadius="8" Width="500" Height="{Binding ActualHeight, ElementName=window, Mode=OneWay}">
@@ -336,7 +337,7 @@
                             </Grid>
                         </Border>
                     </ctrl:CustomPopup>
-                </Grid>
+                </StackPanel>
             </StatusBarItem>
         </StatusBar>
     </Grid>
