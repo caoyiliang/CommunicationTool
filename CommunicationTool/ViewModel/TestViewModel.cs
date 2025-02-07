@@ -27,7 +27,7 @@ namespace CommunicationTool.ViewModel
 {
     public partial class TestViewModel : ObservableObject
     {
-        private Guid _ClientId = Guid.NewGuid();
+        private readonly Guid _ClientId = Guid.NewGuid();
         [ObservableProperty]
         private bool _isPopupVisible;
         [ObservableProperty]
@@ -84,6 +84,8 @@ namespace CommunicationTool.ViewModel
         private CancellationTokenSource? _cts;
         private ITopPort? _TopPort;
         private ITopPort_Server? _TopPort_Server;
+        private PushQueue<(Guid clientId, DateTime dateTime, byte[] data)>? _receiveQueue;
+        private PushQueue<(Guid clientId, DateTime dateTime, byte[] data)>? _sendQueue;
 
         public ObservableCollection<TabItemViewModel> TabItems { get; set; } = [];
 
@@ -415,6 +417,13 @@ namespace CommunicationTool.ViewModel
                         break;
                 }
 
+                _receiveQueue = new() { MaxCacheCount = int.MaxValue };
+                _receiveQueue.OnPushData += ReceiveQueue_OnPushData;
+                await _receiveQueue.StartAsync();
+
+                _sendQueue = new() { MaxCacheCount = int.MaxValue };
+                _sendQueue.OnPushData += SendQueue_OnPushData;
+                await _sendQueue.StartAsync();
 
                 try
                 {
@@ -427,6 +436,40 @@ namespace CommunicationTool.ViewModel
                     //ExceptionStr = "连接失败，检查链路";
                 }
             }
+        }
+
+        private async Task SendQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data) arg)
+        {
+            try
+            {
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
+                    if (receiveViewModel != null)
+                    {
+                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, TransferDirection.Request) { DateTime = arg.dateTime });
+                        receiveViewModel.RequestLength += arg.data.Length;
+                    }
+                });
+            }
+            catch { }
+        }
+
+        private async Task ReceiveQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data) arg)
+        {
+            try
+            {
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
+                    if (receiveViewModel != null)
+                    {
+                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, TransferDirection.Response) { DateTime = arg.dateTime });
+                        receiveViewModel.RsponseLength += arg.data.Length;
+                    }
+                });
+            }
+            catch { }
         }
 
         private IParser NewParser()
@@ -453,7 +496,7 @@ namespace CommunicationTool.ViewModel
                     {
                         if (string.IsNullOrEmpty(ParserConfig.Foot))
                             throw new Exception("Foot is null");
-                        return new FootParser(StringByteUtils.StringToBytes(ParserConfig.Foot));
+                        return new FootParser(StringByteUtils.StringToBytes(ParserConfig.Foot), false);
                     }
                 default:
                     return new NoParser();
@@ -545,40 +588,12 @@ namespace CommunicationTool.ViewModel
 
         private async Task Test_OnReceiveParsedData(Guid clientId, byte[] data)
         {
-            try
-            {
-                await App.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == clientId)?.ReceiveViewModel;
-                    if (receiveViewModel != null)
-                    {
-                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Response));
-                        receiveViewModel.RsponseLength += data.Length;
-                    }
-                });
-            }
-            catch { }
+            await _receiveQueue!.PutInDataAsync((clientId, DateTime.Now, data));
         }
 
         private async Task Test_OnSentData(byte[] data, Guid clientId)
         {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await App.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == clientId)?.ReceiveViewModel;
-                        if (receiveViewModel != null)
-                        {
-                            receiveViewModel.CommunicationDatas.Add(new CommunicationData(data, receiveViewModel.SelectedShowType, TransferDirection.Request));
-                            receiveViewModel.RequestLength += data.Length;
-                        }
-                    });
-                }
-                catch { }
-            });
-            await Task.CompletedTask;
+            await _sendQueue!.PutInDataAsync((clientId, DateTime.Now, data));
         }
 
         [RelayCommand(CanExecute = nameof(CanSend))]

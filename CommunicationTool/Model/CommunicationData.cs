@@ -6,7 +6,7 @@ namespace CommunicationTool.Model
 {
     public partial class CommunicationData(byte[] bytes, DataType showType, TransferDirection transferDirection = TransferDirection.Request) : ObservableObject
     {
-        public DateTime DateTime { get; } = DateTime.Now;
+        public DateTime DateTime { get; init; } = DateTime.Now;
 
         public string Message
         {
