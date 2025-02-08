@@ -192,30 +192,33 @@ namespace CommunicationTool.ViewModel
             if (value)
             {
                 _cts = new();
-                try
+                _ = Task.Run(async () =>
                 {
-                    _ = Task.Run(async () =>
+                    while (!_cts.IsCancellationRequested)
                     {
-                        while (!_cts.IsCancellationRequested)
+                        foreach (var item in SendCmds)
                         {
-                            foreach (var item in SendCmds)
+                            if (item.IsSelected)
                             {
-                                if (item.IsSelected)
+                                if (CurrentSendId != item.Id) CurrentSendId = item.Id; // 设置当前发送行的 Id
+                                await SendDataAsync(item);
+                                if (SendInterval > 0)
                                 {
-                                    if (CurrentSendId != item.Id) CurrentSendId = item.Id; // 设置当前发送行的 Id
-                                    await SendDataAsync(item);
                                     try
                                     {
                                         await Task.Delay(SendInterval, _cts.Token);
                                     }
                                     catch { }
                                 }
+                                else
+                                {
+                                    await Task.Yield(); // 确保UI线程有机会处理其他任务
+                                }
                             }
-                            CurrentSendId = Guid.Empty; // 发送完成后重置 Id
                         }
-                    }, _cts.Token);
-                }
-                catch { }
+                        CurrentSendId = Guid.Empty; // 发送完成后重置 Id
+                    }
+                });
             }
             else
             {
@@ -501,15 +504,15 @@ namespace CommunicationTool.ViewModel
                     {
                         var Head = ParserConfig.Head;
                         if (string.IsNullOrEmpty(Head))
-                            return new HeadLengthParser(GetDataLength);
+                            return new HeadLengthParser(GetDataLength, false);
                         else
-                            return new HeadLengthParser(StringByteUtils.StringToBytes(Head), GetDataLength);
+                            return new HeadLengthParser(StringByteUtils.StringToBytes(Head), GetDataLength, false);
                     }
                 case ParserType.HeadFootParser:
                     {
                         if (string.IsNullOrEmpty(ParserConfig.Head) || string.IsNullOrEmpty(ParserConfig.Foot))
                             throw new Exception("Head or Foot is null");
-                        return new HeadFootParser(StringByteUtils.StringToBytes(ParserConfig.Head), StringByteUtils.StringToBytes(ParserConfig.Foot));
+                        return new HeadFootParser(StringByteUtils.StringToBytes(ParserConfig.Head), StringByteUtils.StringToBytes(ParserConfig.Foot), false);
                     }
                 case ParserType.FootParser:
                     {
