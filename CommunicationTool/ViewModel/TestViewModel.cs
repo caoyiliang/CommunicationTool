@@ -202,28 +202,31 @@ namespace CommunicationTool.ViewModel
                         {
                             if (item.IsSelected)
                             {
-                                if (CurrentSendId != item.Id) CurrentSendId = item.Id; // 设置当前发送行的 Id
+                                if (CurrentSendId != item.Id)
+                                {
+                                    await App.Current.Dispatcher.InvokeAsync(() => CurrentSendId = item.Id);
+                                }
                                 try
                                 {
                                     await SendDataAsync(item);
                                 }
                                 catch (DriveNotFoundException) { }
-                                //if (SendInterval > 0)
-                                //{
-                                try
+                                if (SendInterval > 0)
                                 {
-                                    await Task.Delay(SendInterval, _cts.Token);
+                                    try
+                                    {
+                                        await Task.Delay(SendInterval, _cts.Token);
+                                    }
+                                    catch (TaskCanceledException) { }
                                 }
-                                catch { }
-                                //}
-                                //else
-                                //{
-                                //    await Task.Yield(); // 确保UI线程有机会处理其他任务
-                                //}
+                                else
+                                {
+                                    await Task.Yield(); // 确保UI线程有机会处理其他任务
+                                }
                             }
                         }
-                        CurrentSendId = Guid.Empty; // 发送完成后重置 Id
                     }
+                    await App.Current.Dispatcher.InvokeAsync(() => CurrentSendId = Guid.Empty);
                 });
             }
             else
