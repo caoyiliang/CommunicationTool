@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using Config;
 using System.Text;
 using System.Windows;
-using TopPortLib;
 using TopPortLib.Interfaces;
 using Utils;
 
@@ -34,7 +33,13 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private ITopPort_Server? _TestTopPort_Server;
         [ObservableProperty]
+        private ITopPort_M2M? _TestTopPort_M2M;
+        [ObservableProperty]
         private Guid _ClientId;
+        [ObservableProperty]
+        private string _HostName;
+        [ObservableProperty]
+        private int _Port;
 
         public SendViewModel()
         {
@@ -75,6 +80,8 @@ namespace CommunicationTool.ViewModel
                     await TestTopPort.SendAsync(cmd);
                 else if (TestTopPort_Server != null)
                     await TestTopPort_Server.SendAsync(ClientId, cmd);
+                else if (TestTopPort_M2M != null)
+                    await TestTopPort_M2M.SendAsync(HostName, Port, cmd);
         }
 
         private bool CanSend()

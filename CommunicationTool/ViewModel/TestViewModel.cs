@@ -87,6 +87,7 @@ namespace CommunicationTool.ViewModel
         private CancellationTokenSource? _cts;
         private ITopPort? _TopPort;
         private ITopPort_Server? _TopPort_Server;
+        private ITopPort_M2M? _TopPort_M2M;
         private PushQueue<(Guid clientId, DateTime dateTime, byte[] data)>? _receiveQueue;
         private PushQueue<(Guid clientId, DateTime dateTime, byte[] data)>? _sendQueue;
 
@@ -239,7 +240,6 @@ namespace CommunicationTool.ViewModel
             {
                 case TestType.SerialPort:
                 case TestType.TcpClient:
-                case TestType.UdpClient:
                 case TestType.ClassicBluetoothClient:
                     SendViewModel.TestTopPort = _TopPort;
                     break;
@@ -247,6 +247,10 @@ namespace CommunicationTool.ViewModel
                 case TestType.ClassicBluetoothServer:
                     SendViewModel.ClientId = CurrentClientId.Value;
                     SendViewModel.TestTopPort_Server = _TopPort_Server;
+                    break;
+                case TestType.UdpClient:
+                    SendViewModel.ClientId = CurrentClientId.Value;
+                    SendViewModel.TestTopPort_M2M = _TopPort_M2M;
                     break;
                 default:
                     break;
@@ -310,28 +314,42 @@ namespace CommunicationTool.ViewModel
                 switch (PhysicalPortConnection.Type)
                 {
                     case TestType.TcpServer:
-                        await _TopPort_Server!.CloseAsync();
-                        IsConnect = false;
+                        {
+                            await _TopPort_Server!.CloseAsync();
+                            IsConnect = false;
+                        }
+                        break;
+                    case TestType.UdpClient:
+                        {
+                            await _TopPort_M2M!.CloseAsync();
+                            foreach (var item in TabItems)
+                            {
+                                var str = item.Header;
+                                item.IsConnect = false;
+                                if (str != null)
+                                    if (!str.Contains("测试关闭"))
+                                    {
+                                        item.Header += " 测试关闭";
+                                    }
+                            }
+                            IsConnect = false;
+                        }
                         break;
                     case TestType.SerialPort:
                     case TestType.TcpClient:
-                    case TestType.UdpClient:
-                        await _TopPort!.CloseAsync();
-                        var tabItem = TabItems.Where(_ => _.ClientId == CurrentClientId).First();
-                        var str = tabItem.Header;
-                        if (str != null)
-                            if (str.Contains("掉线尝试重连"))
-                            {
-                                tabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
-                            }
-                            else if (!str.Contains("测试关闭"))
-                            {
-                                tabItem.Header += " 测试关闭";
-                            }
-                        if (PhysicalPortConnection.Type == TestType.UdpClient)
                         {
-                            IsConnect = false;
-                            tabItem.IsConnect = false;
+                            await _TopPort!.CloseAsync();
+                            var tabItem = TabItems.Where(_ => _.ClientId == CurrentClientId).First();
+                            var str = tabItem.Header;
+                            if (str != null)
+                                if (str.Contains("掉线尝试重连"))
+                                {
+                                    tabItem.Header = str.Replace(" 掉线尝试重连", " 测试关闭");
+                                }
+                                else if (!str.Contains("测试关闭"))
+                                {
+                                    tabItem.Header += " 测试关闭";
+                                }
                         }
                         break;
                     case TestType.ClassicBluetoothClient:
@@ -393,14 +411,16 @@ namespace CommunicationTool.ViewModel
                     case TestType.UdpClient:
                         {
                             var Connection = (UdpClientConfig)PhysicalPortConnection;
-                            var physicalPort = new Communication.Bus.PhysicalPort.UdpClient(Connection.RemoteHostName, Connection.RemotePort, new IPEndPoint(IPAddress.Parse(Connection.HostName), Connection.Port));
-                            var currentClientId = Guid.NewGuid();
-                            _TopPort = new TopPort(physicalPort, NewParser());
+                            var physicalPort = new Communication.Bus.Udp(Connection.HostName, Connection.Port);
+                            _TopPort_M2M = new TopPort_M2M(physicalPort, async () => await Task.FromResult(NewParser()));
 
-                            _TopPort.OnSentData += async data => await Test_OnSentData(data, currentClientId);
-                            _TopPort.OnReceiveParsedData += async data => await Test_OnReceiveParsedData(currentClientId, data);
-                            _TopPort.OnConnect += async () => await Test_OnClientConnect(currentClientId);
-                            _TopPort.OnDisconnect += TopPort_OnDisconnect;
+                            _TopPort_M2M.OnClientConnect += Test_OnClientConnect;
+                            _TopPort_M2M.OnReceiveParsedData += Test_OnReceiveParsedData;
+                            _TopPort_M2M.OnSentData += Test_OnSentData;
+
+                            SendViewModel.HostName = Connection.RemoteHostName;
+                            SendViewModel.Port = Connection.RemotePort;
+                            SendViewModel.TestTopPort_M2M = _TopPort_M2M;
                         }
                         break;
                     case TestType.ClassicBluetoothClient:
@@ -444,6 +464,7 @@ namespace CommunicationTool.ViewModel
                 {
                     if (_TopPort != null) await _TopPort.OpenAsync();
                     if (_TopPort_Server != null) { await _TopPort_Server.OpenAsync(); IsConnect = true; }
+                    if (_TopPort_M2M != null) { await _TopPort_M2M.OpenAsync(); IsConnect = true; SendViewModel.IsConnect = true; }
                     IsOpen = true;
                 }
                 catch
@@ -483,7 +504,7 @@ namespace CommunicationTool.ViewModel
             {
                 await App.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    var receiveViewModel = TabItems.SingleOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
+                    var receiveViewModel = TabItems.FirstOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
                     if (receiveViewModel != null)
                     {
                         receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, transferDirection) { DateTime = arg.dateTime });
@@ -572,7 +593,7 @@ namespace CommunicationTool.ViewModel
 
         private bool CanOpen()
         {
-            if (PhysicalPortConnection.Type == TestType.TcpServer || PhysicalPortConnection.Type == TestType.ClassicBluetoothServer) return true;
+            if (PhysicalPortConnection.Type == TestType.TcpServer || PhysicalPortConnection.Type == TestType.ClassicBluetoothServer || PhysicalPortConnection.Type == TestType.UdpClient) return true;
             return !IsOpen || IsConnect;
         }
 
@@ -580,9 +601,10 @@ namespace CommunicationTool.ViewModel
         {
             await App.Current.Dispatcher.InvokeAsync(async () =>
             {
-                var TabItem = TabItems.SingleOrDefault(_ => _.ClientId == clientId) ?? new TabItemViewModel(_ClientId, clientId) { Header = PhysicalPortConnection.Type == TestType.TcpServer ? await _TopPort_Server!.GetClientInfos(clientId) : PhysicalPortConnection.Info };
+                var TabItem = TabItems.SingleOrDefault(_ => _.ClientId == clientId) ?? new TabItemViewModel(_ClientId, clientId) { Header = (PhysicalPortConnection.Type == TestType.TcpServer || PhysicalPortConnection.Type == TestType.UdpClient) ? (PhysicalPortConnection.Type == TestType.UdpClient ? await _TopPort_M2M!.GetClientInfos(clientId) : await _TopPort_Server!.GetClientInfos(clientId)) : PhysicalPortConnection.Info };
                 TabItem.IsConnect = true;
-                TabItems.Add(TabItem);
+                TabItem.Header = TabItem.Header?.Replace(" 掉线尝试重连", string.Empty);
+                if (!TabItems.Contains(TabItem)) TabItems.Add(TabItem);
                 SelectedTabItem = TabItem;
                 IsConnect = true;
                 ConnectCommand.NotifyCanExecuteChanged();
@@ -613,7 +635,7 @@ namespace CommunicationTool.ViewModel
                 var tabItem = TabItems.First(_ => _.ClientId == CurrentClientId);
                 tabItem.IsConnect = false;
                 ConnectCommand.NotifyCanExecuteChanged();
-                if (!(tabItem.Header!.Contains("测试关闭") || tabItem.Header!.Contains("掉线尝试重连")))
+                if (!tabItem.Header!.Contains("测试关闭"))
                     tabItem.Header += " 掉线尝试重连";
                 //Exception = "通讯断连,等待连接...";
             });
@@ -657,13 +679,16 @@ namespace CommunicationTool.ViewModel
                 {
                     case TestType.SerialPort:
                     case TestType.TcpClient:
-                    case TestType.UdpClient:
                     case TestType.ClassicBluetoothClient:
                         await _TopPort!.SendAsync(cmd);
                         break;
                     case TestType.TcpServer:
                     case TestType.ClassicBluetoothServer:
                         if (CurrentClientId != null) await _TopPort_Server!.SendAsync(CurrentClientId.Value, cmd);
+                        break;
+                    case TestType.UdpClient:
+                        var Connection = (UdpClientConfig)PhysicalPortConnection;
+                        if (_TopPort_M2M != null) await _TopPort_M2M.SendAsync(Connection.RemoteHostName, Connection.RemotePort, cmd);
                         break;
                     default:
                         break;
