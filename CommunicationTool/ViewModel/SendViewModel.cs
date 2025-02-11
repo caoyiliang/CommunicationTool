@@ -37,7 +37,7 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private Guid _ClientId;
         [ObservableProperty]
-        private string _HostName;
+        private string? _HostName;
         [ObservableProperty]
         private int _Port;
 
@@ -81,7 +81,7 @@ namespace CommunicationTool.ViewModel
                 else if (TestTopPort_Server != null)
                     await TestTopPort_Server.SendAsync(ClientId, cmd);
                 else if (TestTopPort_M2M != null)
-                    await TestTopPort_M2M.SendAsync(HostName, Port, cmd);
+                    await TestTopPort_M2M.SendAsync(HostName!, Port, cmd);
         }
 
         private bool CanSend()

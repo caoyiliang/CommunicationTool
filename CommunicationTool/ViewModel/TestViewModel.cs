@@ -20,6 +20,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Windows;
+using System.Windows.Threading;
 using TopPortLib;
 using TopPortLib.Interfaces;
 using Utils;
@@ -204,7 +205,8 @@ namespace CommunicationTool.ViewModel
                             {
                                 if (CurrentSendId != item.Id)
                                 {
-                                    await App.Current.Dispatcher.InvokeAsync(() => CurrentSendId = item.Id);
+                                    if (SendInterval >= 200)
+                                        await App.Current.Dispatcher.InvokeAsync(() => CurrentSendId = item.Id, DispatcherPriority.Background);
                                 }
                                 try
                                 {
@@ -523,7 +525,7 @@ namespace CommunicationTool.ViewModel
                                 break;
                         }
                     }
-                });
+                }, DispatcherPriority.Send);
             }
             catch { }
         }
@@ -658,24 +660,9 @@ namespace CommunicationTool.ViewModel
         private async Task SendDataAsync(object send)
         {
             if (send is not SendCmd sendCmd) return;
-            var cmd = sendCmd.Cmd;
+            var cmd = sendCmd.SendCmds;
             if (cmd.Length == 0) return;
 
-            cmd = sendCmd.CrcType switch
-            {
-                CrcType.Modbus => CRC.Crc16(cmd),
-                CrcType.Modbus_R => StringByteUtils.ComibeByteArray(cmd, CRC.CRC16_R(cmd)),
-                CrcType.GB => StringByteUtils.ComibeByteArray(cmd, CRC.GBcrc16(cmd, cmd.Length)),
-                CrcType.GB_string => StringByteUtils.ComibeByteArray(cmd, Encoding.GetEncoding("gb2312").GetBytes(StringByteUtils.BytesToString(CRC.GBcrc16(cmd, cmd.Length)).Replace(" ", ""))),
-                CrcType.GB_protocol => ProcessGBProtocol(cmd),
-                CrcType.HB => StringByteUtils.ComibeByteArray(cmd, CRC.HBcrc16(cmd, cmd.Length)),
-                CrcType.HB_string => StringByteUtils.ComibeByteArray(cmd, Encoding.GetEncoding("gb2312").GetBytes(StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", ""))),
-                CrcType.HB_protocol => ProcessHBProtocol(cmd),
-                CrcType.UCRC => StringByteUtils.ComibeByteArray(cmd, StringByteUtils.GetBytes(CRC.UpdateCRC(cmd, cmd.Length), true)),
-                _ => cmd,
-            };
-            if (sendCmd.CR) cmd = [.. cmd, 0x0d];
-            if (sendCmd.LF) cmd = [.. cmd, 0x0a];
             if (IsConnect)
             {
                 switch (PhysicalPortConnection.Type)
@@ -702,31 +689,6 @@ namespace CommunicationTool.ViewModel
         private bool CanSend()
         {
             return IsConnect;
-        }
-
-        private static byte[] HexStringToByte(string SendData)
-        {
-            try
-            {
-                return StringByteUtils.StringToBytes(SendData);
-            }
-            catch
-            {
-                MessageBox.Show("请输入正确的Hex值");
-                return [];
-            }
-        }
-
-        private static byte[] ProcessGBProtocol(byte[] cmd)
-        {
-            var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
-            return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.GBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
-        }
-
-        private static byte[] ProcessHBProtocol(byte[] cmd)
-        {
-            var strCmd = Encoding.GetEncoding("gb2312").GetString(cmd);
-            return Encoding.GetEncoding("gb2312").GetBytes($"##{strCmd.Length.ToString().PadLeft(4, '0')}{strCmd}{StringByteUtils.BytesToString(CRC.HBcrc16(cmd, cmd.Length)).Replace(" ", "")}");
         }
 
         [RelayCommand]
