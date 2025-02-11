@@ -188,6 +188,7 @@ namespace CommunicationTool.ViewModel
             await _config.TrySaveChangeAsync();
         }
 
+        //byte[] bytes = (byte[])Array.CreateInstance(typeof(byte), 1009);
         partial void OnIsAutoSendChanged(bool value)
         {
             Test.IsAutoSend = value;
@@ -206,25 +207,25 @@ namespace CommunicationTool.ViewModel
                                 if (CurrentSendId != item.Id)
                                 {
                                     if (SendInterval >= 200)
-                                        await App.Current.Dispatcher.InvokeAsync(() => CurrentSendId = item.Id, DispatcherPriority.Background);
+                                        await App.Current.Dispatcher.InvokeAsync(() => CurrentSendId = item.Id);
                                 }
-                                try
-                                {
-                                    await SendDataAsync(item);
-                                }
-                                catch (DriveNotFoundException) { }
-                                if (SendInterval > 0)
+
+                                await Task.Run(async () =>
                                 {
                                     try
                                     {
-                                        await Task.Delay(SendInterval, _cts.Token);
+                                        await SendDataAsync(item);
                                     }
-                                    catch (TaskCanceledException) { }
-                                }
-                                else
-                                {
-                                    await Task.Yield(); // 确保UI线程有机会处理其他任务
-                                }
+                                    catch (DriveNotFoundException) { }
+                                    if (SendInterval > 0)
+                                    {
+                                        try
+                                        {
+                                            await Task.Delay(SendInterval, _cts.Token);
+                                        }
+                                        catch (TaskCanceledException) { }
+                                    }
+                                });
                             }
                         }
                     }
@@ -525,7 +526,7 @@ namespace CommunicationTool.ViewModel
                                 break;
                         }
                     }
-                }, DispatcherPriority.Send);
+                });
             }
             catch { }
         }
