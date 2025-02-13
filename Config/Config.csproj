@@ -8,6 +8,6 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CSoft.DataPairs.Ceras" Version="9.0.1" />
     <PackageReference Include="CSoft.Utils" Version="9.1.1" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.1" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.2" />
   </ItemGroup>
 </Project>

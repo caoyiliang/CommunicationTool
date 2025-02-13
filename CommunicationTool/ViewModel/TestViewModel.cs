@@ -20,7 +20,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Windows;
-using System.Windows.Threading;
 using TopPortLib;
 using TopPortLib.Interfaces;
 using Utils;
@@ -89,8 +88,7 @@ namespace CommunicationTool.ViewModel
         private ITopPort? _TopPort;
         private ITopPort_Server? _TopPort_Server;
         private ITopPort_M2M? _TopPort_M2M;
-        private PushQueue<(Guid clientId, DateTime dateTime, byte[] data)>? _receiveQueue;
-        private PushQueue<(Guid clientId, DateTime dateTime, byte[] data)>? _sendQueue;
+        private PushQueue<(Guid clientId, DateTime dateTime, byte[] data, TransferDirection transferDirection)>? _receiveQueue;
 
         public ObservableCollection<TabItemViewModel> TabItems { get; set; } = [];
 
@@ -462,10 +460,6 @@ namespace CommunicationTool.ViewModel
                 _receiveQueue.OnPushData += ReceiveQueue_OnPushData;
                 await _receiveQueue.StartAsync();
 
-                _sendQueue = new() { MaxCacheCount = int.MaxValue };
-                _sendQueue.OnPushData += SendQueue_OnPushData;
-                await _sendQueue.StartAsync();
-
                 try
                 {
                     if (_TopPort != null) await _TopPort.OpenAsync();
@@ -480,31 +474,7 @@ namespace CommunicationTool.ViewModel
             }
         }
 
-        private async Task SendQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data) arg)
-        {
-            if (IsPerformance)
-            {
-                _ = Task.Run(async () => await ProcessReceivedDataAsync(arg, TransferDirection.Request));
-            }
-            else
-            {
-                await ProcessReceivedDataAsync(arg, TransferDirection.Request);
-            }
-        }
-
-        private async Task ReceiveQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data) arg)
-        {
-            if (IsPerformance)
-            {
-                _ = Task.Run(async () => await ProcessReceivedDataAsync(arg, TransferDirection.Response));
-            }
-            else
-            {
-                await ProcessReceivedDataAsync(arg, TransferDirection.Response);
-            }
-        }
-
-        private async Task ProcessReceivedDataAsync((Guid clientId, DateTime dateTime, byte[] data) arg, TransferDirection transferDirection)
+        private async Task ReceiveQueue_OnPushData((Guid clientId, DateTime dateTime, byte[] data, TransferDirection transferDirection) arg)
         {
             try
             {
@@ -513,8 +483,8 @@ namespace CommunicationTool.ViewModel
                     var receiveViewModel = TabItems.FirstOrDefault(_ => _.ClientId == arg.clientId)?.ReceiveViewModel;
                     if (receiveViewModel != null)
                     {
-                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, transferDirection) { DateTime = arg.dateTime });
-                        switch (transferDirection)
+                        receiveViewModel.CommunicationDatas.Add(new CommunicationData(arg.data, receiveViewModel.SelectedShowType, arg.transferDirection) { DateTime = arg.dateTime });
+                        switch (arg.transferDirection)
                         {
                             case TransferDirection.Request:
                                 receiveViewModel.RequestLength += arg.data.Length;
@@ -527,6 +497,7 @@ namespace CommunicationTool.ViewModel
                         }
                     }
                 });
+                await Task.Delay(1);
             }
             catch { }
         }
@@ -649,12 +620,20 @@ namespace CommunicationTool.ViewModel
 
         private async Task Test_OnReceiveParsedData(Guid clientId, byte[] data)
         {
-            await _receiveQueue!.PutInDataAsync((clientId, DateTime.Now, data));
+            try
+            {
+                await _receiveQueue!.PutInDataAsync((clientId, DateTime.Now, data, TransferDirection.Response));
+            }
+            catch { }
         }
 
         private async Task Test_OnSentData(byte[] data, Guid clientId)
         {
-            await _sendQueue!.PutInDataAsync((clientId, DateTime.Now, data));
+            try
+            {
+                await _receiveQueue!.PutInDataAsync((clientId, DateTime.Now, data, TransferDirection.Request));
+            }
+            catch { }
         }
 
         [RelayCommand(CanExecute = nameof(CanSend))]
