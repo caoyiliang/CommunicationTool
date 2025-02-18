@@ -456,7 +456,7 @@ namespace CommunicationTool.ViewModel
                         break;
                 }
 
-                _receiveQueue = new() { MaxCacheCount = int.MaxValue };
+                _receiveQueue = new(false) { MaxCacheCount = int.MaxValue };
                 _receiveQueue.OnPushData += ReceiveQueue_OnPushData;
                 await _receiveQueue.StartAsync();
 
