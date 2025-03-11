@@ -30,8 +30,6 @@ namespace CommunicationTool.ViewModel
     {
         private readonly Guid _ClientId = Guid.NewGuid();
         [ObservableProperty]
-        private bool _isPerformance = true;
-        [ObservableProperty]
         private bool _isPopupVisible;
         [ObservableProperty]
         private bool _hasPopupVisible;
