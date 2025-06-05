@@ -53,7 +53,19 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding DateTime,StringFormat='{}{0:yyyy-MM-dd HH:mm:ss.fff}'}" Margin="5"/>
                         <TextBlock Text="{Binding TransferDirection,Converter={StaticResource TransferDirectionConverter}}" Margin="5"/>
-                        <TextBox Text="{Binding Message,Mode=OneWay}" IsReadOnly="True" Margin="5" BorderThickness="0" Background="Transparent"/>
+                        <TextBox Text="{Binding Message,Mode=OneWay}" IsReadOnly="True" Margin="5" BorderThickness="0" Background="Transparent">
+                            <b:Interaction.Behaviors>
+                                <i:DynamicContextMenuBehavior/>
+                            </b:Interaction.Behaviors>
+                            <TextBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="转换为 Int" CommandParameter="{Binding SelectedText, RelativeSource={RelativeSource AncestorType=TextBox}}"/>
+                                    <MenuItem Header="转换为 UInt" CommandParameter="{Binding SelectedText, RelativeSource={RelativeSource AncestorType=TextBox}}"/>
+                                    <MenuItem Header="转换为 Float" CommandParameter="{Binding SelectedText, RelativeSource={RelativeSource AncestorType=TextBox}}"/>
+                                    <MenuItem Header="转换为 Double" CommandParameter="{Binding SelectedText, RelativeSource={RelativeSource AncestorType=TextBox}}"/>
+                                </ContextMenu>
+                            </TextBox.ContextMenu>
+                        </TextBox>
                     </StackPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

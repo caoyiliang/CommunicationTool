@@ -1,7 +1,6 @@
 ﻿using CommunicationTool.ViewModel;
 using Config;
 using Config.Model;
-using InTheHand.Net.Sockets;
 using Microsoft.Xaml.Behaviors;
 using System.Windows;
 using System.Windows.Controls;

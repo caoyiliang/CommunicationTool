@@ -15,7 +15,7 @@
         d:DataContext="{d:DesignInstance Type=viewmodel:TestViewModel}"
         Style="{StaticResource TestWindow}"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="450" Width="800">
+        Title="{Binding Title}" Height="450" Width="820">
     <Window.Resources>
         <converter:ConnectStatusConverter x:Key="ConnectStatusConverter"/>
         <converter:PopupStatusConverter x:Key="PopupStatusConverter"/>
@@ -106,7 +106,7 @@
                                 <Setter Property="Margin" Value="2"/>
                             </Style>
                             <DataTemplate x:Key="SerialPortTemplate">
-                                <Grid Width="165" Height="200" Background="#590000FF">
+                                <Grid Width="350" Height="200" Background="#590000FF">
                                     <Grid HorizontalAlignment="Center" 
                                           VerticalAlignment="Center" 
                                           d:DataContext="{d:DesignInstance Type=viewmodel:TestViewModel}" 

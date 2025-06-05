@@ -16,6 +16,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Ports;
+using System.Management;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -34,7 +35,7 @@ namespace CommunicationTool.ViewModel
         [ObservableProperty]
         private bool _hasPopupVisible;
         [ObservableProperty]
-        private string[]? _portNames;
+        private List<string> _portNames = [];
         [ObservableProperty]
         private int[] _baudRates = [300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 43000, 57000, 57600, 115200];
         [ObservableProperty]
@@ -92,7 +93,7 @@ namespace CommunicationTool.ViewModel
 
         public TestViewModel(Connection config, TestConfig test)
         {
-            PortNames = SerialPort.GetPortNames();
+            RefreshPortNames();
             StopBits = Enum.GetValues<StopBits>();
             Parity = Enum.GetValues<Parity>();
             IPHostEntry ipHostEntry = Dns.GetHostEntry(Dns.GetHostName());
@@ -131,6 +132,48 @@ namespace CommunicationTool.ViewModel
                     });
                 }
             });
+        }
+
+        private void RefreshPortNames()
+        {
+            PortNames.Clear();
+            // 用于存储端口号和设备名的映射
+            var portNames = SerialPort.GetPortNames();
+            var portDescriptions = new Dictionary<string, string>();
+
+            // 使用WMI获取设备描述
+            using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Name LIKE '%(COM%'"))
+            {
+                foreach (var obj in searcher.Get())
+                {
+                    var name = obj["Name"]?.ToString();
+                    if (name != null)
+                    {
+                        // 匹配所有 (COMx)
+                        var matches = System.Text.RegularExpressions.Regex.Matches(name, @"COM\d+");
+                        foreach (System.Text.RegularExpressions.Match match in matches)
+                        {
+                            var port = match.Value; // 得到 COM1、COM2
+                            portDescriptions[port] = name;
+                        }
+                    }
+                }
+            }
+
+            // 组合显示
+            foreach (var port in portNames)
+            {
+                if (portDescriptions.TryGetValue(port, out var desc))
+                {
+                    // 去掉括号及其内容，只保留设备名
+                    var deviceName = System.Text.RegularExpressions.Regex.Replace(desc, @"\s*\(.*?\)", "").Trim();
+                    PortNames.Add($"{port} - {deviceName}");
+                }
+                else
+                {
+                    PortNames.Add(port);
+                }
+            }
         }
 
         private async void SendCmds_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -282,7 +325,7 @@ namespace CommunicationTool.ViewModel
         {
             if (!IsConnect)
             {
-                PortNames = SerialPort.GetPortNames();
+                RefreshPortNames();
                 IsPopupVisible = true;
             }
             await Task.CompletedTask;
@@ -371,7 +414,7 @@ namespace CommunicationTool.ViewModel
                     case TestType.SerialPort:
                         {
                             var Connection = (SerialPortConfig)PhysicalPortConnection;
-                            var physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName, Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
+                            var physicalPort = new Communication.Bus.PhysicalPort.SerialPort(Connection.PortName.Split(" - ")[0], Connection.BaudRate, Connection.Parity, Connection.DataBits, Connection.StopBits)
                             {
                                 DtrEnable = Connection.DTR,
                                 RtsEnable = Connection.RTS
