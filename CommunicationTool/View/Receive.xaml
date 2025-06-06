@@ -15,6 +15,8 @@
     <UserControl.Resources>
         <converter:RadioButtonCheckedConverter x:Key="RadioButtonCheckedConverter"/>
         <converter:TransferDirectionConverter x:Key="TransferDirectionConverter"/>
+        <converter:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converter:TransferDirectionVisibilityConverter x:Key="TransferDirectionVisibilityConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -38,8 +40,8 @@
             <RadioButton Content="ASCII" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.ASCII}}"/>
             <RadioButton Content="UTF8" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.UTF8}}"/>
             <RadioButton Content="GB2312" GroupName="showType" IsChecked="{Binding SelectedShowType, Converter={StaticResource RadioButtonCheckedConverter}, ConverterParameter={x:Static config:DataType.GB2312}}"/>
-            <CheckBox Content="显示接收时间" IsChecked="True"/>
-            <CheckBox Content="显示发送" IsChecked="True"/>
+            <CheckBox x:Name="ShowDateTimeCheckBox" Content="显示接收时间" IsChecked="True"/>
+            <CheckBox x:Name="ShowSendCheckBox" Content="显示发送" IsChecked="True"/>
         </StackPanel>
 
         <ItemsControl ItemsSource="{Binding CommunicationDatas}" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" Margin="10,0" Grid.Row="1">
@@ -51,7 +53,13 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding DateTime,StringFormat='{}{0:yyyy-MM-dd HH:mm:ss.fff}'}" Margin="5"/>
+                        <StackPanel.Visibility>
+                            <MultiBinding Converter="{StaticResource TransferDirectionVisibilityConverter}">
+                                <Binding Path="TransferDirection"/>
+                                <Binding Path="IsChecked" ElementName="ShowSendCheckBox"/>
+                            </MultiBinding>
+                        </StackPanel.Visibility>
+                        <TextBlock Text="{Binding DateTime,StringFormat='{}{0:yyyy-MM-dd HH:mm:ss.fff}'}" Margin="5" Visibility="{Binding IsChecked, ElementName=ShowDateTimeCheckBox, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         <TextBlock Text="{Binding TransferDirection,Converter={StaticResource TransferDirectionConverter}}" Margin="5"/>
                         <TextBox Text="{Binding Message,Mode=OneWay}" IsReadOnly="True" Margin="5" BorderThickness="0" Background="Transparent">
                             <b:Interaction.Behaviors>

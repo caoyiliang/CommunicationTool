@@ -76,12 +76,19 @@ namespace CommunicationTool.ViewModel
             if (CR) cmd = [.. cmd, 0x0d];
             if (LF) cmd = [.. cmd, 0x0a];
             if (IsConnect)
-                if (TestTopPort != null)
-                    await TestTopPort.SendAsync(cmd);
-                else if (TestTopPort_Server != null)
-                    await TestTopPort_Server.SendAsync(ClientId, cmd);
-                else if (TestTopPort_M2M != null)
-                    await TestTopPort_M2M.SendAsync(HostName!, Port, cmd);
+                try
+                {
+                    if (TestTopPort != null)
+                        await TestTopPort.SendAsync(cmd);
+                    else if (TestTopPort_Server != null)
+                        await TestTopPort_Server.SendAsync(ClientId, cmd);
+                    else if (TestTopPort_M2M != null)
+                        await TestTopPort_M2M.SendAsync(HostName!, Port, cmd);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"发送数据失败: {ex.Message}");
+                }
         }
 
         private bool CanSend()
