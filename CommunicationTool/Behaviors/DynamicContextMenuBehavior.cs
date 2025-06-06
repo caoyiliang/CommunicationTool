@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xaml.Behaviors;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -62,6 +63,36 @@ namespace CommunicationTool.Behaviors
                 AssociatedObject.ContextMenu.Items.Add(CreateMenuItem("转换为 Int", () => ConvertToInt(selectedText)));
                 AssociatedObject.ContextMenu.Items.Add(CreateMenuItem("转换为 UInt", () => ConvertToUInt(selectedText)));
                 AssociatedObject.ContextMenu.Items.Add(CreateMenuItem("转换为 Double", () => ConvertToDouble(selectedText)));
+            }
+            AssociatedObject.ContextMenu.Items.Add(CreateMenuItem("转换为 Ascii", () => ConvertToAscii(selectedText)));
+            AssociatedObject.ContextMenu.Items.Add(CreateMenuItem("转换为 Gb2312", () => ConvertToGb2312(selectedText)));
+        }
+
+        private void ConvertToGb2312(string selectedText)
+        {
+            try
+            {
+                var bytes = StringByteUtils.StringToBytes(selectedText);
+                var result = Encoding.GetEncoding("gb2312").GetString(bytes);
+                MessageBox.Show($"转换结果: {result}", "转换为 Gb2312");
+            }
+            catch
+            {
+                MessageBox.Show("转换失败，请检查数据格式。", "错误");
+            }
+        }
+
+        private void ConvertToAscii(string selectedText)
+        {
+            try
+            {
+                var bytes = StringByteUtils.StringToBytes(selectedText);
+                var result = Encoding.ASCII.GetString(bytes);
+                MessageBox.Show($"转换结果: {result}", "转换为 Ascii");
+            }
+            catch
+            {
+                MessageBox.Show("转换失败，请检查数据格式。", "错误");
             }
         }
 
